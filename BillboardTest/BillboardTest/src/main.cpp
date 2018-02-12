@@ -106,7 +106,6 @@ public:
 		{
 			mycam.a = 1;
 		}
-
 		if (key == GLFW_KEY_A && action == GLFW_RELEASE)
 		{
 			mycam.a = 0;
@@ -115,60 +114,9 @@ public:
 		{
 			mycam.d = 1;
 		}
-
 		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
 		{
 			mycam.d = 0;
-		}
-
-		if (key == GLFW_KEY_E && action == GLFW_PRESS)
-		{
-			lasershot = 1;
-		}
-
-		if (key == GLFW_KEY_Q && action == GLFW_PRESS)
-		{
-			destroyed = 1;
-		}
-		if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
-		{
-			mycam.kl = 1;
-		}
-		if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
-		{
-			mycam.kl = 0;
-		}
-		if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-		{
-			mycam.kr = 1;
-		}
-		if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
-		{
-			mycam.kr = 0;
-		}
-		if (key == GLFW_KEY_UP && action == GLFW_PRESS)
-		{
-			mycam.ku = 1;
-		}
-		if (key == GLFW_KEY_UP && action == GLFW_RELEASE)
-		{
-			mycam.ku = 0;
-		}
-		if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
-		{
-			mycam.kd = 1;
-		}
-		if (key == GLFW_KEY_DOWN && action == GLFW_RELEASE)
-		{
-			mycam.kd = 0;
-		}
-		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-		{
-			mycam.shift = 15;
-		}
-		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-		{
-			mycam.shift = 0;
 		}
 	}
 
@@ -406,7 +354,7 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		str = resourceDirectory + "/text.jpg";
+		str = resourceDirectory + "/mariobitmap.png";
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &TextureScore);
@@ -449,15 +397,6 @@ public:
 
 		glUseProgram(scoreprog->pid);
 		glUniform1i(TexScoreLocation, 0);
-
-		for (int i = 0; i < 50; ++i)
-		{
-			Asteroid *a = new Asteroid();
-			a->size = 10;
-			asteroids.insert(a);
-		}
-
-		ship = make_shared<Ship>();
 	}
 	void render()
 	{
@@ -525,6 +464,7 @@ public:
 		bool depth = true;
 
 		//S
+		M = glm::translate(mat4(1), glm::vec3(0,0,-3));
 		glUniformMatrix4fv(scoreprog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
