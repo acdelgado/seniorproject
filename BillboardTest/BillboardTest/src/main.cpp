@@ -26,7 +26,6 @@
 #include "asteroid.hpp"
 #include "ship.hpp"
 #include "bullet.hpp"
-#include "Billboard.h"
 #include "controller.h"
 #include "BillboardData.h"
 #include "BillboardFile.h"
@@ -70,7 +69,104 @@ public:
 	// Data necessary to give our triangle to OpenGL
 	GLuint VertexBufferIDBox,VertexBufferTex;
 
-	std::shared_ptr<Billboard> bill;
+	class Billboard {
+	public:
+		GLuint VAO;
+		GLuint VBO, TexBuffer;
+		GLuint Texture;
+
+		shared_ptr<Program> *prog;
+
+		glm::mat4 M;
+		glm::vec3 position, speed;
+
+		float z;
+		float frame;
+
+		void Billboard::init(shared_ptr<Program> *program, float zposition, string imageFile)
+		{
+			prog = program;
+			z = zposition;
+
+			//generate the VAO
+			glGenVertexArrays(1, &VAO);
+			glBindVertexArray(VAO);
+
+			//generate vertex buffer to hand off to OGL
+			glGenBuffers(1, &VBO);
+			//set the current state to focus on our vertex buffer
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			GLfloat *ver = new GLfloat[18];
+			int verc = 0;
+			ver[verc++] = -1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+			ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+			ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+			ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+			ver[verc++] = 1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+			ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+			//actually memcopy the data - only do this once
+			glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), ver, GL_STATIC_DRAW);
+			//we need to set up the vertex array
+			glEnableVertexAttribArray(0);
+			//key function to get up how many elements to pull out at a time (3)
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+			//generate vertex buffer to hand off to OGL
+			glGenBuffers(1, &TexBuffer);
+			//set the current state to focus on our vertex buffer
+			glBindBuffer(GL_ARRAY_BUFFER, TexBuffer);
+			GLfloat *cube_tex = new GLfloat[12];
+			int texc = 0;
+			cube_tex[texc++] = 0, cube_tex[texc++] = 0;
+			cube_tex[texc++] = 1, cube_tex[texc++] = 0;
+			cube_tex[texc++] = 0, cube_tex[texc++] = 1;
+			cube_tex[texc++] = 1, cube_tex[texc++] = 0;
+			cube_tex[texc++] = 1, cube_tex[texc++] = 1;
+			cube_tex[texc++] = 0, cube_tex[texc++] = 1;
+			//actually memcopy the data - only do this once
+			glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), cube_tex, GL_STATIC_DRAW);
+			//we need to set up the vertex array
+			glEnableVertexAttribArray(2);
+			//key function to get up how many elements to pull out at a time (3)
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+			int width, height, channels;
+			char filepath[1000];
+			strcpy(filepath, imageFile.c_str());
+			unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+			glGenTextures(1, &Texture);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, Texture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
+
+			glUseProgram((*prog)->pid);
+			glUniform1i(TexLocation, 0);
+		}
+
+		void Billboard::draw(bool depthTest, float x, float y)
+		{
+			if (!depthTest)
+				glDisable(GL_DEPTH_TEST);
+			glBindVertexArray(VAO);
+
+			M = glm::translate(glm::mat4(1), glm::vec3(x, y, z));
+			glUniformMatrix4fv((*prog)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glEnable(GL_DEPTH_TEST);
+		}
+	};
+
+	Billboard bill;
 
 	int points = 0;
 	float lasershot = 0;
@@ -261,144 +357,12 @@ public:
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
-		bill = make_shared<Billboard>();
-		bill->init(&scoreprog, -10);
+		
 	}
 
 	void initGeom(const std::string& resourceDirectory)
 	{
-		// Initialize mesh.
-		shape = make_shared<Shape>();
-		shape->loadMesh(resourceDirectory + "/asteroid.obj");
-		shape->resize();
-		shape->calc_SxT();
-		shape->init();
-
-		shape2 = make_shared<Shape>();
-		shape2->loadMesh(resourceDirectory + "/FA18.obj");
-		shape2->resize();
-		shape2->calc_SxT();
-		shape2->init();
-
-		lasershape = make_shared<Shape>();
-		lasershape->loadMesh(resourceDirectory + "/sphere.obj");
-		lasershape->resize();
-		lasershape->init();
-
-		int width, height, channels;
-		char filepath[1000];
-
-		//texture 1
-		string str = resourceDirectory + "/moon.jpg";
-		strcpy(filepath, str.c_str());
-		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		//texture 2
-		str = resourceDirectory + "/moon_normalmap.jpg";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture2);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture2);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-
-		str = resourceDirectory + "/stars.jpg";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture3);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture3);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		str = resourceDirectory + "/FA18.png";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture4);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture4);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		
-		str = resourceDirectory + "/explosion.jpg";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &TextureExplosion);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureExplosion);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		str = resourceDirectory + "/mariobitmap.png";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &TextureScore);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureScore);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-
-		//[TWOTEXTURES]
-		//set the 2 textures to the correct samplers in the fragment shader:
-		GLuint Tex1Location = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
-		GLuint Tex2Location = glGetUniformLocation(prog->pid, "tex2");
-		GLuint Tex3Location = glGetUniformLocation(prog2->pid, "tex");//tex, tex2... sampler in the fragment shader
-		GLuint Tex4Location = glGetUniformLocation(prog2->pid, "tex2");
-		GLuint Tex5Location = glGetUniformLocation(shipprog->pid, "tex");//tex, tex2... sampler in the fragment shader
-		GLuint Tex6Location = glGetUniformLocation(shipprog->pid, "tex2");
-		GLuint TexplosionLocation = glGetUniformLocation(billprog->pid, "tex");
-		GLuint TexScoreLocation = glGetUniformLocation(scoreprog->pid, "tex");
-
-		// Then bind the uniform samplers to texture units:
-		glUseProgram(prog->pid);
-		glUniform1i(Tex1Location, 0);
-		glUniform1i(Tex2Location, 1);
-
-		glUseProgram(prog2->pid);
-		glUniform1i(Tex3Location, 0);
-		glUniform1i(Tex4Location, 1);
-
-		glUseProgram(shipprog->pid);
-		glUniform1i(Tex5Location, 0);
-		glUniform1i(Tex6Location, 1);
-
-		glUseProgram(billprog->pid);
-		glUniform1i(TexplosionLocation, 0);
-
-		glUseProgram(scoreprog->pid);
-		glUniform1i(TexScoreLocation, 0);
+		bill.init(&scoreprog, -10, resourceDirectory + "/moon.jpg");
 	}
 	void render()
 	{
@@ -475,9 +439,9 @@ public:
 		glUniform2fv(scoreprog->getUniform("offset"), 1, &scorecoord.x);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureScore);
+		glBindTexture(GL_TEXTURE_2D, bill.Texture);
 
-		bill->draw(depth,scorecoord.x,scorecoord.y);
+		bill.draw(depth,scorecoord.x,scorecoord.y);
 
 		scoreprog->unbind();
 

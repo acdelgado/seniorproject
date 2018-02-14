@@ -133,7 +133,6 @@
     <ClCompile Include="asteroid.cpp" />
     <ClCompile Include="ship.cpp" />
     <ClCompile Include="bullet.cpp" />
-    <ClCompile Include="Billboard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BillboardData.h" />
@@ -145,7 +144,6 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="WindowManager.h" />
-    <ClInclude Include="Billboard.h" />
     <ClInclude Include="controller.h" />
   </ItemGroup>
   <ItemGroup>
