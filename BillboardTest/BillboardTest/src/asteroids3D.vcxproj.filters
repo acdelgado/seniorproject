@@ -10,6 +10,12 @@
     <ClCompile Include="WindowManager.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
+    <ClCompile Include="asteroid.cpp" />
+    <ClCompile Include="ship.cpp" />
+    <ClCompile Include="bullet.cpp" />
+    <ClCompile Include="Billboard.cpp" />
+    <ClCompile Include="BillboardFile.cpp" />
+    <ClCompile Include="BillboardData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Program.h" />
@@ -21,6 +27,10 @@
     </ClInclude>
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="Billboard.h" />
+    <ClInclude Include="controller.h" />
+    <ClInclude Include="BillboardFile.h" />
+    <ClInclude Include="BillboardData.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

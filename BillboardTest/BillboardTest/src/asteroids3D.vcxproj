@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{F184FBF9-CB70-477E-AF5C-E83C4987361D}</ProjectGuid>
     <ProjectName>lab08</ProjectName>
   </PropertyGroup>
@@ -122,6 +122,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\ext\glad\src\glad.c" />
+    <ClCompile Include="BillboardData.cpp" />
+    <ClCompile Include="BillboardFile.cpp" />
     <ClCompile Include="GLSL.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
@@ -134,6 +136,8 @@
     <ClCompile Include="Billboard.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BillboardData.h" />
+    <ClInclude Include="BillboardFile.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />

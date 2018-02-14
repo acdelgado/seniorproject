@@ -28,6 +28,8 @@
 #include "bullet.hpp"
 #include "Billboard.h"
 #include "controller.h"
+#include "BillboardData.h"
+#include "BillboardFile.h"
 #include <set>
 
 using namespace std;
@@ -509,6 +511,10 @@ int main(int argc, char **argv)
 
 	application->init(resourceDir);
 	application->initGeom(resourceDir);
+
+	BillboardFile test = BillboardFile(resourceDir + "/level1.grl");
+	std::cout << "Opened the fucking file" << std::endl;
+	vector<BillboardData> things = test.getAll();
 
 	// Loop until the user closes the window.
 	while (! glfwWindowShouldClose(windowManager->getHandle()))

@@ -1,1 +1,6 @@
 desktop.ini
+.vscode
+BillboardTest/BillboardTest/Debug
+BillboardTest/BillboardTest/.vs
+BillboardTest/BillboardTest/src/Debug
+BillboardTest/BillboardTest/src/asteroids3D.*
