@@ -477,7 +477,6 @@ int main(int argc, char **argv)
 	application->initGeom(resourceDir);
 
 	BillboardFile test = BillboardFile(resourceDir + "/level1.grl");
-	std::cout << "Opened the fucking file" << std::endl;
 	vector<BillboardData> things = test.getAll();
 
 	// Loop until the user closes the window.
