@@ -33,9 +33,198 @@
 
 using namespace std;
 using namespace glm;
+double get_last_elapsed_time()
+{
+	static double lasttime = glfwGetTime();
+	double actualtime = glfwGetTime();
+	double difference = actualtime - lasttime;
+	lasttime = actualtime;
+	return difference;
+}
+class character
+{
+public:
+	vec2 pos,impulse;
+	int lifes;
+	character()
+	{
+		pos = vec2(-20, 0);
+		impulse = vec2(0, 0);
+	}
+	void process(float ftime)
+	{
+		pos += impulse * ftime;
+		impulse.y -= 10* ftime;
+		if (pos.y < -1)
+		{
+			pos.y = -1;
+			impulse.y = 0;
+		}
+		
+	}
+};
+character player;
+class Billboard {
+public:
+	GLuint VAO;
+	GLuint VBO, TexBuffer;
+	GLuint Texture;
+	shared_ptr<Program> *prog;
+	GLfloat *data;
+
+	glm::mat4 M;
+	glm::vec3 position, speed;
+
+	float z;
+	float frame;
+	
+		void init( BillboardData *bbd)
+	{
+		
+			
+		//generate the VAO
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VBO);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		//actually memcopy the data - only do this once
+		data = new GLfloat[12];
+		int verc = 0;
+		data[verc++] = bbd->points[0][0], data[verc++] = bbd->points[0][1];
+		data[verc++] = bbd->points[1][0], data[verc++] = bbd->points[1][1];
+		data[verc++] = bbd->points[2][0], data[verc++] = bbd->points[2][1];
+		data[verc++] = bbd->points[3][0], data[verc++] = bbd->points[3][1];
+		data[verc++] = bbd->points[4][0], data[verc++] = bbd->points[4][1];
+		data[verc++] = bbd->points[5][0], data[verc++] = bbd->points[5][1];
+		glBufferData(GL_ARRAY_BUFFER, bbd->points.size() * sizeof(vec3), &bbd->points[0], GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(0);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &TexBuffer);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, TexBuffer);
+		
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, bbd->texcoords.size() * sizeof(vec2), &bbd->texcoords[0], GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(2);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+
+		int width, height, channels;
+		char filepath[1000];
+		cout << bbd->texture.c_str() << endl;
+		strcpy(filepath, bbd->texture.c_str());
+		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &Texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		/*GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
+
+		glUseProgram((*prog)->pid);
+		glUniform1i(TexLocation, 0);*/
+	}
+	void init(shared_ptr<Program> *program, float zposition, string imageFile)
+	{
+		prog = program;
+		z = zposition;
+
+		//generate the VAO
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VBO);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		GLfloat *ver = new GLfloat[18];
+		int verc = 0;
+		ver[verc++] = -1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+		ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+		ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+		ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
+		ver[verc++] = 1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+		ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), ver, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(0);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &TexBuffer);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, TexBuffer);
+		GLfloat *cube_tex = new GLfloat[12];
+		int texc = 0;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 1;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 1;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 1;
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), cube_tex, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(2);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+		int width, height, channels;
+		char filepath[1000];
+		strcpy(filepath, imageFile.c_str());
+		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &Texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
+
+		glUseProgram((*prog)->pid);
+		glUniform1i(TexLocation, 0);
+	}
+
+	void draw(shared_ptr<Program> *program, bool depthTest, float x, float y)
+	{
+		if (!depthTest)
+			glDisable(GL_DEPTH_TEST);
+		glBindVertexArray(VAO);
+
+		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-10));
+		glUniformMatrix4fv((*program)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glEnable(GL_DEPTH_TEST);
+	}
+};
+
+vector<Billboard> bill;
+Billboard sprite;
 
 class Application : public EventCallbacks
 {
@@ -69,104 +258,7 @@ public:
 	// Data necessary to give our triangle to OpenGL
 	GLuint VertexBufferIDBox,VertexBufferTex;
 
-	class Billboard {
-	public:
-		GLuint VAO;
-		GLuint VBO, TexBuffer;
-		GLuint Texture;
-
-		shared_ptr<Program> *prog;
-
-		glm::mat4 M;
-		glm::vec3 position, speed;
-
-		float z;
-		float frame;
-
-		void Billboard::init(shared_ptr<Program> *program, float zposition, string imageFile)
-		{
-			prog = program;
-			z = zposition;
-
-			//generate the VAO
-			glGenVertexArrays(1, &VAO);
-			glBindVertexArray(VAO);
-
-			//generate vertex buffer to hand off to OGL
-			glGenBuffers(1, &VBO);
-			//set the current state to focus on our vertex buffer
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			GLfloat *ver = new GLfloat[18];
-			int verc = 0;
-			ver[verc++] = -1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-			ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-			ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
-			ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-			ver[verc++] = 1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
-			ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
-			//actually memcopy the data - only do this once
-			glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), ver, GL_STATIC_DRAW);
-			//we need to set up the vertex array
-			glEnableVertexAttribArray(0);
-			//key function to get up how many elements to pull out at a time (3)
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-
-			//generate vertex buffer to hand off to OGL
-			glGenBuffers(1, &TexBuffer);
-			//set the current state to focus on our vertex buffer
-			glBindBuffer(GL_ARRAY_BUFFER, TexBuffer);
-			GLfloat *cube_tex = new GLfloat[12];
-			int texc = 0;
-			cube_tex[texc++] = 0, cube_tex[texc++] = 0;
-			cube_tex[texc++] = 1, cube_tex[texc++] = 0;
-			cube_tex[texc++] = 0, cube_tex[texc++] = 1;
-			cube_tex[texc++] = 1, cube_tex[texc++] = 0;
-			cube_tex[texc++] = 1, cube_tex[texc++] = 1;
-			cube_tex[texc++] = 0, cube_tex[texc++] = 1;
-			//actually memcopy the data - only do this once
-			glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), cube_tex, GL_STATIC_DRAW);
-			//we need to set up the vertex array
-			glEnableVertexAttribArray(2);
-			//key function to get up how many elements to pull out at a time (3)
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-
-			int width, height, channels;
-			char filepath[1000];
-			strcpy(filepath, imageFile.c_str());
-			unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
-			glGenTextures(1, &Texture);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, Texture);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-
-			GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
-
-			glUseProgram((*prog)->pid);
-			glUniform1i(TexLocation, 0);
-		}
-
-		void Billboard::draw(bool depthTest, float x, float y)
-		{
-			if (!depthTest)
-				glDisable(GL_DEPTH_TEST);
-			glBindVertexArray(VAO);
-
-			M = glm::translate(glm::mat4(1), glm::vec3(x, y, z));
-			glUniformMatrix4fv((*prog)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			glEnable(GL_DEPTH_TEST);
-		}
-	};
-
-	Billboard bill;
+	
 
 	int points = 0;
 	float lasershot = 0;
@@ -360,44 +452,83 @@ public:
 		
 	}
 
-	void initGeom(const std::string& resourceDirectory)
+
+
+	void initGeom(const std::string& resourceDirectory) 
 	{
-		bill.init(&scoreprog, -10, resourceDirectory + "/moon.jpg");
+
+		sprite.init(&scoreprog, 3, resourceDirectory + "/mario.png");
+		BillboardFile test = BillboardFile(resourceDirectory + "/level2.grl");
+		vector<BillboardData> things = test.getAll();
+		bill.resize(things.size());
+		for (int ii = 0; ii < things.size(); ii++)
+		{
+			bill[ii].init(&things[ii]);
+		}
 	}
 	void render()
 	{
-		
+		double ftime = get_last_elapsed_time();
 		if (gamepad->IsConnected())
 		{
-		if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_Y)
-			mycam.w = 1;
-		else
-			mycam.w = 0;
-		if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
+			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_Y)
+				mycam.w = 1;
+			else
+				mycam.w = 0;
+			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
 			{
-			
-			mycam.s = 1;
+
+				if (player.impulse.y == 0.0)
+					player.impulse.y = 10;
 			}
-		else
-			mycam.s = 0;
+			
+
+			SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
+			SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
+
+			if (lx > 3000 || lx < 3000)
+			{
+				float nx = (float)lx / 32000.0;
+				player.impulse.x = nx*4;
+
+			}
+			else
+				player.impulse.x = 0;
+		
 
 		}
-		SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
-		SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
 
-		if (abs(ly) > 3000)
+		for (int ii = 1; ii < 2; ii++)
+		{
+
+			/*player.pos = collide(player.pos, bill.data);*/
+			//	if (sprite.z == bill[ii].z) {
+			float minX = bill[ii].data[0];
+			float maxX = bill[ii].data[4];
+			float minY = bill[ii].data[1];
+			float maxY = bill[ii].data[5];
+
+			if(inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
 			{
-			float angle_x = (float)ly / 32000.0;
-			angle_x *= 0.05;
-			mycam.rot.x -= angle_x;
-			}
-		if (abs(lx) > 3000)
-			{
-			float angle_y = (float)lx / 32000.0;
-			angle_y *= 0.05;
-			mycam.rot.y -= angle_y;
+				player.pos.x = maxX + 1;
 			}
 
+			if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
+			{
+				player.pos.x = minX - 1;
+			}
+
+			if (inSquare(vec2(player.pos.x, player.pos.y - 1), minX, maxX, minY, maxY))
+			{
+				player.pos.y = maxY + 1;
+				player.impulse.y = 0;
+			}
+
+			if (inSquare(vec2(player.pos.x, player.pos.y + 1), minX, maxX, minY, maxY))
+			{
+				player.pos.y = minY - 1;
+			}
+		}
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -411,20 +542,13 @@ public:
 		static float angle = 0;
 		angle += 0.01;
 		static vec3 eCord(0,0,0);
-				
-		
-
-		
+					
 		//VIEW MATRIX
 		V = mycam.process();
-
-		
-		
+				
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		
-
 		scoreprog->bind();
 
 		bool depth = true;
@@ -439,12 +563,59 @@ public:
 		glUniform2fv(scoreprog->getUniform("offset"), 1, &scorecoord.x);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, bill.Texture);
+		
 
-		bill.draw(depth,scorecoord.x,scorecoord.y);
+		for(int ii=1;ii<2;ii++)
+			bill[ii].draw(&scoreprog,depth,scorecoord.x,scorecoord.y);
 
+
+		player.process(ftime);
+
+		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
 		scoreprog->unbind();
 
+	}
+
+	vec2 collide(vec2 p, GLfloat *data)
+	{
+		vec2 v1 = vec2(data[0], data[1]);
+		vec2 v2 = vec2(data[2], data[3]);
+		vec2 v3 = vec2(data[4], data[5]);
+		vec2 v4 = vec2(data[10], data[11]);
+
+		vec2 r = p;
+
+		if (isInTriangle(r.x + 1, r.y + 1, v1, v3, v4))
+		{
+			r = vec2(r.x - 1, r.y);
+		}
+
+		if (isInTriangle(r.x + 1, r.y + 1, v1, v2, v3))
+		{
+			r = vec2(r.x, r.y - 1);
+		}
+
+		if (isInTriangle(r.x + 1, r.y - 1, v1, v3, v4))
+		{
+			r = vec2(r.x - 1, r.y);
+		}
+
+		if (isInTriangle(r.x + 1, r.y + 1, v1, v2, v3))
+		{
+			r = vec2(r.x, r.y - 1);
+		}
+
+		return vec2(0, 0);
+	}
+
+	bool isInTriangle(float x, float y, vec2 a, vec2 b, vec2 c) 
+	{
+		return false;
+	}
+
+	bool inSquare(vec2 p, float minX, float maxX, float minY, float maxY)
+	{
+		return p.x > minX && p.x < maxX && p.y > minY && p.y < maxY;
 	}
 
 };
@@ -465,6 +636,8 @@ int main(int argc, char **argv)
 	// Your main will always include a similar set up to establish your window
 	// and GL context, etc.
 
+	
+	
 	WindowManager *windowManager = new WindowManager();
 	windowManager->init(1920, 1080);
 	windowManager->setEventCallbacks(application);
@@ -476,8 +649,7 @@ int main(int argc, char **argv)
 	application->init(resourceDir);
 	application->initGeom(resourceDir);
 
-	BillboardFile test = BillboardFile(resourceDir + "/level1.grl");
-	vector<BillboardData> things = test.getAll();
+	
 
 	// Loop until the user closes the window.
 	while (! glfwWindowShouldClose(windowManager->getHandle()))

@@ -22,7 +22,7 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 	vector<string> tokens;
 	long vertexCount, parsedVecs = 0;
 	vector<glm::vec3> points;
-
+	vector<glm::vec2> texcoords;
 	while (input) {
 		if ((line[0] == '/' && line[1] == '/') || line.length() == 0) {
 			getline(input, line);
@@ -40,7 +40,8 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 				vertexCount = std::stol(tokens[2], nullptr);
 			}
 			else if (tokens[1] == "texture:") {
-				texture = tokens[2];
+				if(tokens.size() > 2)
+					texture = tokens[2];
 				// in case there were spaces in the texture file path
 				for (int i = 3; i < tokens.size(); i++) {
 					texture += " " + tokens[i];
@@ -51,6 +52,8 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 			points.push_back(glm::vec3(std::stof(tokens[0]), 
 				                       std::stof(tokens[1]), 
 				                       std::stof(tokens[2])));
+			texcoords.push_back(glm::vec2(std::stof(tokens[6]),
+				std::stof(tokens[7])));
 			parsedVecs++;
 			if (parsedVecs == vertexCount) {
 				break;
@@ -59,7 +62,7 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 		getline(input, line);
 	}
 
-	return BillboardData(name, texture, points, vertexCount);
+	return BillboardData(name, texture, points, texcoords, vertexCount);
 }
 
 vector<BillboardData> BillboardFile::getAll() {
