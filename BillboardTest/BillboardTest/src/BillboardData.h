@@ -7,12 +7,14 @@
 using namespace std;
 using namespace glm;
 
+
 class BillboardData {
 public:
-	BillboardData(string name, string texture, vector<glm::vec3> points, long vertexCount);
+	BillboardData(string name, string texture, vector<glm::vec3> points, vector<glm::vec2> tcoords, long vertexCount);
 
-private:
+
 	vector<glm::vec3> points;
+	vector<glm::vec2> texcoords;
 	string name;
 	long vertexCount;
 	string texture;

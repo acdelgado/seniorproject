@@ -5,9 +5,11 @@ using namespace std;
 using namespace glm;
 
 
-BillboardData::BillboardData(string name, string texture, vector<glm::vec3> points, long vertexCount) {
-   this->name = name;
-   this->texture = texture;
-   this->points = points;
-   this->vertexCount = vertexCount;
+BillboardData::BillboardData(string n, string t, vector<glm::vec3> points_, vector<glm::vec2> tcoords, long vertexCount) 
+{
+   name = n;
+   texture = t;
+   points = points_;
+   vertexCount = vertexCount;
+   texcoords = tcoords;
 }
