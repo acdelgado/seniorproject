@@ -13,4 +13,5 @@ void main()
 {
 gl_Position = P * V * M * vertPos;
 fragTex = vertTex;	
+fragTex.y *= -1;
 }
