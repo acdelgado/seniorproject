@@ -48,16 +48,16 @@ public:
 	int lifes;
 	character()
 	{
-		pos = vec2(-20, 0);
+		pos = vec2(0, 0);
 		impulse = vec2(0, 0);
 	}
 	void process(float ftime)
 	{
 		pos += impulse * ftime;
 		impulse.y -= 10* ftime;
-		if (pos.y < -1)
+		if (pos.y < 1)
 		{
-			pos.y = -1;
+			pos.y = 1;
 			impulse.y = 0;
 		}
 		
@@ -81,7 +81,7 @@ public:
 		void init( BillboardData *bbd)
 	{
 		
-			
+			z = bbd->points[0][2];
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -457,7 +457,7 @@ public:
 	void initGeom(const std::string& resourceDirectory) 
 	{
 
-		sprite.init(&scoreprog, 3, resourceDirectory + "/mario.png");
+		sprite.init(&scoreprog, 0, resourceDirectory + "/mario.png");
 		BillboardFile test = BillboardFile(resourceDirectory + "/level2.grl");
 		vector<BillboardData> things = test.getAll();
 		bill.resize(things.size());
@@ -468,20 +468,52 @@ public:
 	}
 	void render()
 	{
+		
+
+		for (int ii = 0; ii < bill.size(); ii++)
+		{
+
+			/*player.pos = collide(player.pos, bill.data);*/
+			if (sprite.z == bill[ii].z) {
+				float minX = bill[ii].data[0];
+				float maxX = bill[ii].data[4];
+				float minY = bill[ii].data[1];
+				float maxY = bill[ii].data[5];
+
+				if (inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
+				{
+					player.pos.x = maxX + 1;
+				}
+
+				if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
+				{
+					player.pos.x = minX - 1;
+				}
+
+				if (inSquare(vec2(player.pos.x, player.pos.y - 1), minX, maxX, minY, maxY))
+				{
+					player.pos.y = maxY + 1;
+					player.impulse.y = 0;
+				}
+
+				if (inSquare(vec2(player.pos.x, player.pos.y + 1), minX, maxX, minY, maxY))
+				{
+					player.pos.y = minY - 1;
+				}
+			}
+		}
+
 		double ftime = get_last_elapsed_time();
 		if (gamepad->IsConnected())
 		{
-			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_Y)
-				mycam.w = 1;
-			else
-				mycam.w = 0;
+			
 			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
 			{
 
 				if (player.impulse.y == 0.0)
-					player.impulse.y = 10;
+					player.impulse.y = 9;
 			}
-			
+
 
 			SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
 			SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
@@ -489,46 +521,15 @@ public:
 			if (lx > 3000 || lx < 3000)
 			{
 				float nx = (float)lx / 32000.0;
-				player.impulse.x = nx*4;
+				player.impulse.x = nx * 4;
 
 			}
 			else
 				player.impulse.x = 0;
-		
+
 
 		}
 
-		for (int ii = 1; ii < 2; ii++)
-		{
-
-			/*player.pos = collide(player.pos, bill.data);*/
-			//	if (sprite.z == bill[ii].z) {
-			float minX = bill[ii].data[0];
-			float maxX = bill[ii].data[4];
-			float minY = bill[ii].data[1];
-			float maxY = bill[ii].data[5];
-
-			if(inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
-			{
-				player.pos.x = maxX + 1;
-			}
-
-			if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
-			{
-				player.pos.x = minX - 1;
-			}
-
-			if (inSquare(vec2(player.pos.x, player.pos.y - 1), minX, maxX, minY, maxY))
-			{
-				player.pos.y = maxY + 1;
-				player.impulse.y = 0;
-			}
-
-			if (inSquare(vec2(player.pos.x, player.pos.y + 1), minX, maxX, minY, maxY))
-			{
-				player.pos.y = minY - 1;
-			}
-		}
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -565,8 +566,10 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		
 
-		for(int ii=1;ii<2;ii++)
-			bill[ii].draw(&scoreprog,depth,scorecoord.x,scorecoord.y);
+		for (int ii = 0; ii < bill.size(); ii++) {
+			if (bill[ii].z == 0)
+				bill[ii].draw(&scoreprog, depth, scorecoord.x, scorecoord.y);
+		}
 
 
 		player.process(ftime);
@@ -574,43 +577,6 @@ public:
 		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
 		scoreprog->unbind();
 
-	}
-
-	vec2 collide(vec2 p, GLfloat *data)
-	{
-		vec2 v1 = vec2(data[0], data[1]);
-		vec2 v2 = vec2(data[2], data[3]);
-		vec2 v3 = vec2(data[4], data[5]);
-		vec2 v4 = vec2(data[10], data[11]);
-
-		vec2 r = p;
-
-		if (isInTriangle(r.x + 1, r.y + 1, v1, v3, v4))
-		{
-			r = vec2(r.x - 1, r.y);
-		}
-
-		if (isInTriangle(r.x + 1, r.y + 1, v1, v2, v3))
-		{
-			r = vec2(r.x, r.y - 1);
-		}
-
-		if (isInTriangle(r.x + 1, r.y - 1, v1, v3, v4))
-		{
-			r = vec2(r.x - 1, r.y);
-		}
-
-		if (isInTriangle(r.x + 1, r.y + 1, v1, v2, v3))
-		{
-			r = vec2(r.x, r.y - 1);
-		}
-
-		return vec2(0, 0);
-	}
-
-	bool isInTriangle(float x, float y, vec2 a, vec2 b, vec2 c) 
-	{
-		return false;
 	}
 
 	bool inSquare(vec2 p, float minX, float maxX, float minY, float maxY)
