@@ -87,6 +87,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WindowsSdkDir)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -124,6 +125,8 @@
     <ClCompile Include="..\ext\glad\src\glad.c" />
     <ClCompile Include="BillboardData.cpp" />
     <ClCompile Include="BillboardFile.cpp" />
+    <ClCompile Include="client.cpp" />
+    <ClCompile Include="cserver.cpp" />
     <ClCompile Include="GLSL.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
@@ -138,6 +141,9 @@
     <ClInclude Include="BillboardData.h" />
     <ClInclude Include="BillboardFile.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="client.h" />
+    <ClInclude Include="cserver.h" />
+    <ClInclude Include="data_packet.h" />
     <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="Program.h" />

@@ -15,6 +15,8 @@
     <ClCompile Include="bullet.cpp" />
     <ClCompile Include="BillboardFile.cpp" />
     <ClCompile Include="BillboardData.cpp" />
+    <ClCompile Include="client.cpp" />
+    <ClCompile Include="cserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Program.h" />
@@ -29,6 +31,9 @@
     <ClInclude Include="controller.h" />
     <ClInclude Include="BillboardFile.h" />
     <ClInclude Include="BillboardData.h" />
+    <ClInclude Include="client.h" />
+    <ClInclude Include="cserver.h" />
+    <ClInclude Include="data_packet.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

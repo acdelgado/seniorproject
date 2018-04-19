@@ -30,6 +30,8 @@
 #include "controller.h"
 #include "BillboardData.h"
 #include "BillboardFile.h"
+#include "client.h"
+#include "cserver.h"
 
 using namespace std;
 using namespace glm;
