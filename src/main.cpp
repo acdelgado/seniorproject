@@ -8,6 +8,7 @@
 */
 #include <iostream>
 #include <glad/glad.h>
+#include <set>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -29,7 +30,6 @@
 #include "controller.h"
 #include "BillboardData.h"
 #include "BillboardFile.h"
-#include <set>
 
 using namespace std;
 using namespace glm;
@@ -48,13 +48,13 @@ public:
 	int lifes;
 	character()
 	{
-		pos = vec2(0, 0);
+		pos = vec2(-10, 0);
 		impulse = vec2(0, 0);
 	}
 	void process(float ftime)
 	{
 		pos += impulse * ftime;
-		impulse.y -= 10* ftime;
+		impulse.y -= 15* ftime;
 		if (pos.y < 1)
 		{
 			pos.y = 1;
@@ -66,6 +66,7 @@ public:
 character player;
 class Billboard {
 public:
+	string name;
 	GLuint VAO;
 	GLuint VBO, TexBuffer;
 	GLuint Texture;
@@ -78,10 +79,10 @@ public:
 	float z;
 	float frame;
 	
-		void init( BillboardData *bbd)
+	void init( BillboardData *bbd, string resourceDir)
 	{
-		
-			z = bbd->points[0][2];
+		name = bbd->name;
+		z = bbd->points[0][2];
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -123,7 +124,7 @@ public:
 		int width, height, channels;
 		char filepath[1000];
 		cout << bbd->texture.c_str() << endl;
-		strcpy(filepath, bbd->texture.c_str());
+		strcpy(filepath, (resourceDir + bbd->texture).c_str());
 		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &Texture);
 		glActiveTexture(GL_TEXTURE0);
@@ -135,11 +136,17 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		/*GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
-
-		glUseProgram((*prog)->pid);
-		glUniform1i(TexLocation, 0);*/
+		
 	}
+
+	void bindToProg(shared_ptr<Program> *program) 
+	{
+		GLuint TexLocation = glGetUniformLocation((*program)->pid, "tex");
+
+		glUseProgram((*program)->pid);
+		glUniform1i(TexLocation, 0);
+	}
+
 	void init(shared_ptr<Program> *program, float zposition, string imageFile)
 	{
 		prog = program;
@@ -353,7 +360,7 @@ public:
 		// Initialize the GLSL program.
 		prog = make_shared<Program>();
 		prog->setVerbose(true);
-		prog->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/simple_frag.glsl");
+		prog->setShaderNames(resourceDirectory + "simple_vert.glsl", resourceDirectory + "simple_frag.glsl");
 		if (! prog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -372,7 +379,7 @@ public:
 
 		prog2 = make_shared<Program>();
 		prog2->setVerbose(true);
-		prog2->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/frag_nolight.glsl");
+		prog2->setShaderNames(resourceDirectory + "vert.glsl", resourceDirectory + "frag_nolight.glsl");
 		if (!prog2->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -388,7 +395,7 @@ public:
 
 		shipprog = make_shared<Program>();
 		shipprog->setVerbose(true);
-		shipprog->setShaderNames(resourceDirectory + "/shipvert.glsl", resourceDirectory + "/shipfrag.glsl");
+		shipprog->setShaderNames(resourceDirectory + "shipvert.glsl", resourceDirectory + "shipfrag.glsl");
 		if (!shipprog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -405,7 +412,7 @@ public:
 
 		laserprog = make_shared<Program>();
 		laserprog->setVerbose(true);
-		laserprog->setShaderNames(resourceDirectory + "/laservert.glsl", resourceDirectory + "/laserfrag.glsl");
+		laserprog->setShaderNames(resourceDirectory + "laservert.glsl", resourceDirectory + "laserfrag.glsl");
 		laserprog->init();
 		if (!laserprog->init())
 		{
@@ -419,7 +426,7 @@ public:
 
 		billprog = make_shared<Program>();
 		billprog->setVerbose(true);
-		billprog->setShaderNames(resourceDirectory + "/billvert.glsl", resourceDirectory + "/billfrag.glsl");
+		billprog->setShaderNames(resourceDirectory + "billvert.glsl", resourceDirectory + "billfrag.glsl");
 		if (!billprog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -435,7 +442,7 @@ public:
 
 		scoreprog = make_shared<Program>();
 		scoreprog->setVerbose(true);
-		scoreprog->setShaderNames(resourceDirectory + "/scorevert.glsl", resourceDirectory + "/scorefrag.glsl");
+		scoreprog->setShaderNames(resourceDirectory + "scorevert.glsl", resourceDirectory + "scorefrag.glsl");
 		if (!billprog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -457,13 +464,15 @@ public:
 	void initGeom(const std::string& resourceDirectory) 
 	{
 
-		sprite.init(&scoreprog, 0, resourceDirectory + "/mario.png");
-		BillboardFile test = BillboardFile(resourceDirectory + "/level2.grl");
+		sprite.init(&scoreprog, 0, resourceDirectory + "mario.png");
+
+		BillboardFile test = BillboardFile(resourceDirectory + "level2.grl");
 		vector<BillboardData> things = test.getAll();
 		bill.resize(things.size());
 		for (int ii = 0; ii < things.size(); ii++)
 		{
-			bill[ii].init(&things[ii]);
+			bill[ii].init(&things[ii], resourceDirectory);
+			bill[ii].bindToProg(&scoreprog);
 		}
 	}
 	void render()
@@ -511,14 +520,14 @@ public:
 			{
 
 				if (player.impulse.y == 0.0)
-					player.impulse.y = 9;
+					player.impulse.y = 15;
 			}
 
 
 			SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
 			SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
 
-			if (lx > 3000 || lx < 3000)
+			if (lx > 3000 || lx < (-3000))
 			{
 				float nx = (float)lx / 32000.0;
 				player.impulse.x = nx * 4;
@@ -567,7 +576,7 @@ public:
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
-			if (bill[ii].z == 0)
+			//if (bill[ii].z == 0)
 				bill[ii].draw(&scoreprog, depth, scorecoord.x, scorecoord.y);
 		}
 
@@ -589,7 +598,7 @@ public:
 int main(int argc, char **argv)
 {
 	// Where the resources are loaded from
-	std::string resourceDir = "../resources";
+	std::string resourceDir = "../resources/";
 
 	if (argc >= 2)
 	{
