@@ -7,6 +7,8 @@
 	implementation of a 3D version of the 1979 arcade classic, "Asteroids"
 */
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <glad/glad.h>
 #include <set>
 
@@ -224,7 +226,7 @@ public:
 			glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(VAO);
 
-		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-10));
+		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-50));
 		glUniformMatrix4fv((*program)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -628,7 +630,10 @@ int main(int argc, char **argv)
 	start_client("127.0.0.1", 27015);
 
 	client_data_packet_ cp;
-	
+	server_data_packet_ incoming;
+	srand(time(NULL));
+	int id = rand() + 1;
+	cp.dataint[0] = id;
 
 	// Loop until the user closes the window.
 	while (! glfwWindowShouldClose(windowManager->getHandle()))
@@ -636,14 +641,15 @@ int main(int argc, char **argv)
 		// Render scene.
 		application->render();
 
-		cout << player.impulse.y << endl;
+		//cout << player.impulse.y << endl;
 		
-		if (player.impulse.x != 0 || !(player.impulse.y < 0 && player.impulse.y > -0.30)) {
+		/*if (player.impulse.x != 0 || player.impulse.y > 0 || player.impulse.y < -0.30) {*/
 			cp.datafloat[0] = player.pos.x;
 			cp.datafloat[1] = player.pos.y;
 			set_outgoing_data_packet(cp);
-			cout << "sending position" << endl;
-		}
+			get_incomming_data_packet(incoming);
+			/*cout << "sending position" << endl;
+		}*/
 
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());

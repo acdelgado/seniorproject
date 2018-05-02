@@ -615,44 +615,63 @@ int main(int argc, char **argv)
 
 	
 	
-	WindowManager *windowManager = new WindowManager();
-	windowManager->init(1920, 1080);
-	windowManager->setEventCallbacks(application);
-	application->windowManager = windowManager;
+	//WindowManager *windowManager = new WindowManager();
+	//windowManager->init(1920, 1080);
+	//windowManager->setEventCallbacks(application);
+	//application->windowManager = windowManager;
 
 	// This is the code that will likely change program to program as you
 	// may need to initialize or set up different data and state
 
-	application->init(resourceDir);
-	application->initGeom(resourceDir);
+	//application->init(resourceDir);
+	//application->initGeom(resourceDir);
 
 	start_server(27015);
 
 	client_data_packet_ received;
+	client_data_packet_ *allData;
+	server_data_packet_ outgoing;
 
+	get_all_incoming_data(&allData);
+
+	while (true) {
+		int active = 0;
+		for (int i = 0; i < 50; i++) {
+			if (allData[i].dataint[0] != 0) {
+				outgoing.dataint[active] = allData[i].dataint[i];
+				outgoing.datafloat[active] = allData[i].datafloat[0];
+				outgoing.datafloat[active + 1] = allData[i].datafloat[1];
+				active++;
+			}
+		}
+		set_outgoing_data_packet(outgoing);
+
+		//cout << received.datafloat[0] << endl;
+		//cout << received.datafloat[1] << endl;
+	}
 
 
 	
 
-	// Loop until the user closes the window.
-	while (! glfwWindowShouldClose(windowManager->getHandle()))
-	{
-		// Render scene.
-		application->render();
+	//// Loop until the user closes the window.
+	//while (! glfwWindowShouldClose(windowManager->getHandle()))
+	//{
+	//	// Render scene.
+	//	application->render();
 
-		// Swap front and back buffers.
-		glfwSwapBuffers(windowManager->getHandle());
-		// Poll for and process events.
-		glfwPollEvents();
+	//	// Swap front and back buffers.
+	//	glfwSwapBuffers(windowManager->getHandle());
+	//	// Poll for and process events.
+	//	glfwPollEvents();
 
-		get_incomming_data_packet(received);
+	//	get_incomming_data_packet(received);
 
-		player.pos.x = received.datafloat[0];
-		player.pos.y = received.datafloat[1];
-	}
+	//	player.pos.x = received.datafloat[0];
+	//	player.pos.y = received.datafloat[1];
+	//}
 
 	// Quit program.
-	windowManager->shutdown();
+	//windowManager->shutdown();
 	return 0;
 }
 

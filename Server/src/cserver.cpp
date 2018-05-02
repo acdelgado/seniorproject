@@ -17,6 +17,10 @@ void get_incomming_data_packet(client_data_packet_ &data)
 	data = server.client_data[0];
 	}
 
+void get_all_incoming_data(client_data_packet_ **data) {
+	*data = server.client_data;
+}
+
 void start_server(int port)
 	{
 	DWORD threadId;

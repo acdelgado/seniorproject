@@ -32,13 +32,18 @@
 
 #pragma once
 #include "data_packet.h"
+#include <iostream>
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
+#define MAX_CLIENTS 50
+
 #define DEFAULT_BUFLEN 4096
 #define DEFAULT_PORT "27015"
+
+using namespace std;
 
 class server_
 	{
@@ -49,10 +54,19 @@ class server_
 		SOCKET ListenSocket = INVALID_SOCKET;
 		SOCKET ClientSocket = INVALID_SOCKET;
 
+
 		struct addrinfo *result = NULL;
 		struct addrinfo hints;
 
-		int number_of_clients = 0;
+		sockaddr_in server;
+		int len, number_of_clients = 0; 
+			
+		struct _clients_b {
+			bool connected;
+			SOCKET ss;
+		};
+
+		_clients_b clients[MAX_CLIENTS];
 
 		int init_winsocks()
 			{
@@ -106,7 +120,14 @@ class server_
 				return 1;
 				}
 
-			
+
+			iResult = listen(ListenSocket, SOMAXCONN);
+			if (iResult == SOCKET_ERROR) {
+				printf("listen failed with error: %d\n", WSAGetLastError());
+				closesocket(ListenSocket);
+				WSACleanup();
+				return 1;
+			}
 
 			freeaddrinfo(result);
 			return 0;
@@ -114,25 +135,28 @@ class server_
 		//-----------------------------------------------------
 		int listen_to_clients()
 			{
-			iResult = listen(ListenSocket, SOMAXCONN);
-			if (iResult == SOCKET_ERROR) {
-				printf("listen failed with error: %d\n", WSAGetLastError());
-				closesocket(ListenSocket);
-				WSACleanup();
-				return 1;
-				}
 
+			len = sizeof(server);
 			// Accept a client socket
-			ClientSocket = accept(ListenSocket, NULL, NULL);
-			if (ClientSocket == INVALID_SOCKET) {
-				printf("accept failed with error: %d\n", WSAGetLastError());
+			ClientSocket = accept(ListenSocket, (struct sockaddr*)& server, &len);
+
+
+			if (ClientSocket != INVALID_SOCKET) {
+				//save client socket into our struct table
+				clients[number_of_clients].ss = ClientSocket;
+				clients[number_of_clients].connected = TRUE;
+				//and of course we need a calculator too
+				number_of_clients++;
+
+				cout << "New client: " << ClientSocket << endl;
+
+				/*printf("accept failed with error: %d\n", WSAGetLastError());
 				closesocket(ListenSocket);
 				WSACleanup();
-				return 1;
-				}
-			number_of_clients++;
+				return 1;*/
+			}
 			// No longer need server socket
-			closesocket(ListenSocket);
+			//closesocket(ListenSocket);
 			return 0;
 			}
 		//-----------------------------------------------------
@@ -164,7 +188,7 @@ class server_
 				}
 			return 0;
 			}
-		int receive_data(char *data, int maxlen)
+		int receive_data(SOCKET socket, char *data, int maxlen)
 			{
 			int iResult = recv(ClientSocket, data, maxlen, MSG_WAITALL);
 			/*if (iResult > 0)
@@ -185,8 +209,8 @@ class server_
 
 			if (connection_socket())
 					return false;
-			if (listen_to_clients())
-				return false;
+			/*if (listen_to_clients())
+				return false;*/
 			return true;
 			}
 		//----------------------------------------------------------------------------------------------------------------
@@ -200,25 +224,37 @@ class server_
 			server_data_packet_ temp_server_data;
 			while (running)
 				{
-				for (int ii = 0; ii < number_of_clients; ii++)
-					{
-					int res = receive_data(temp.get_address(), temp.get_size());
-					if (res <= 0)break;//error or connection closed
-					client_data[ii] = temp;
+				listen_to_clients();
+				for (int ii = 0; ii < number_of_clients; ii++) {
+					if (clients[ii].connected) {
+						int res = receive_data(clients[ii].ss, temp.get_address(), temp.get_size());
+
+						if (res <= 0) {
+							//error or connection closed
+							cout << "Client disconnected" << endl;
+							clients[ii].connected = FALSE;
+							client_data[ii] = client_data_packet_();
+							number_of_clients--;
+						}
+						else {
+							client_data[ii] = temp;
+						}
 					}
+					
+				}
 				temp_server_data = data_packet;
 				for (int ii = 0; ii < number_of_clients; ii++)
 					{
-					int res = send(ClientSocket, temp_server_data.get_address(), temp_server_data.get_size(),0);
+					int res = send(clients[ii].ss, temp_server_data.get_address(), temp_server_data.get_size(),0);
 					if (res == SOCKET_ERROR)break;//error or connection closed
-					}			
+					}
 				}
 
 			close_connection();			
 			}
 	
 		server_data_packet_ data_packet;
-		client_data_packet_ client_data[20];//20 possible clients
+		client_data_packet_ client_data[MAX_CLIENTS];
 		//std::thread
 	
 		bool close_connection()
@@ -235,4 +271,5 @@ class server_
 
 	void set_outgoing_data_packet(server_data_packet_ &data);
 	void get_incomming_data_packet(client_data_packet_ &data);
+	void get_all_incoming_data(client_data_packet_ *data[]);
 	void start_server(int port = 27015);
