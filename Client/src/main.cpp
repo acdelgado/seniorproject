@@ -67,7 +67,10 @@ public:
 		
 	}
 };
+
 character player;
+character other;
+
 class Billboard {
 public:
 	string name;
@@ -584,9 +587,10 @@ public:
 				bill[ii].draw(&scoreprog, depth, scorecoord.x, scorecoord.y);
 		}
 
-
+		other.process(ftime);
 		player.process(ftime);
 
+		sprite.draw(&scoreprog, depth, other.pos.x, other.pos.y);
 		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
 		scoreprog->unbind();
 
@@ -627,6 +631,7 @@ int main(int argc, char **argv)
 	application->init(resourceDir);
 	application->initGeom(resourceDir);
 
+	/*start_client("129.65.221.104", 27015);*/
 	start_client("127.0.0.1", 27015);
 
 	client_data_packet_ cp;
@@ -640,14 +645,28 @@ int main(int argc, char **argv)
 	{
 		// Render scene.
 		application->render();
-
-		//cout << player.impulse.y << endl;
 		
 		/*if (player.impulse.x != 0 || player.impulse.y > 0 || player.impulse.y < -0.30) {*/
-			cp.datafloat[0] = player.pos.x;
-			cp.datafloat[1] = player.pos.y;
-			set_outgoing_data_packet(cp);
-			get_incomming_data_packet(incoming);
+		cp.datafloat[0] = player.pos.x;
+		cp.datafloat[1] = player.pos.y;
+		cp.datafloat[2] = player.impulse.x;
+		cp.datafloat[3] = player.impulse.y;
+
+		set_outgoing_data_packet(cp);
+		get_incomming_data_packet(incoming);
+
+		if (incoming.dataint[0] == id) {
+			other.pos.x = incoming.datafloat[4];
+			other.pos.y = incoming.datafloat[5];
+			other.impulse.x = incoming.datafloat[6];
+			other.impulse.y = incoming.datafloat[7];
+		}
+		else {
+			other.pos.x = incoming.datafloat[0];
+			other.pos.y = incoming.datafloat[1];
+			other.impulse.x = incoming.datafloat[2];
+			other.impulse.y = incoming.datafloat[3];
+		}
 			/*cout << "sending position" << endl;
 		}*/
 

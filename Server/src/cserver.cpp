@@ -12,7 +12,7 @@ void set_outgoing_data_packet(server_data_packet_ &data)
 	{
 	server.data_packet = data;
 	}
-void get_incomming_data_packet(client_data_packet_ &data)
+void get_incoming_data_packet(client_data_packet_ &data)
 	{
 	data = server.client_data[0];
 	}

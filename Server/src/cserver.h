@@ -45,6 +45,13 @@
 
 using namespace std;
 
+
+struct _clients_b {
+	bool connected;
+	SOCKET ss;
+	sockaddr_in address;
+};
+
 class server_
 	{
 	private:
@@ -60,11 +67,7 @@ class server_
 
 		sockaddr_in server;
 		int len, number_of_clients = 0; 
-			
-		struct _clients_b {
-			bool connected;
-			SOCKET ss;
-		};
+
 
 		_clients_b clients[MAX_CLIENTS];
 
@@ -100,6 +103,8 @@ class server_
 		//-----------------------------------------------------
 		int connection_socket()
 			{
+			int j = 1;
+
 			// Create a SOCKET for connecting to server
 			ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 			if (ListenSocket == INVALID_SOCKET) {
@@ -108,6 +113,8 @@ class server_
 				WSACleanup();
 				return 1;
 				}
+
+			setsockopt(ListenSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&j, sizeof(j));
 
 			// Setup the TCP listening socket
 			int i = (int)result->ai_addrlen;
@@ -121,12 +128,22 @@ class server_
 				}
 
 
-			iResult = listen(ListenSocket, SOMAXCONN);
+			iResult = listen(ListenSocket, MAX_CLIENTS);
 			if (iResult == SOCKET_ERROR) {
 				printf("listen failed with error: %d\n", WSAGetLastError());
 				closesocket(ListenSocket);
 				WSACleanup();
 				return 1;
+			}
+
+			unsigned long b = 1;
+
+			//make it non blocking
+			ioctlsocket(ListenSocket, FIONBIO, &b);
+			if (iResult == SOCKET_ERROR) {
+				printf("listen failed with error: %d\n", WSAGetLastError());
+				closesocket(ListenSocket);
+				WSACleanup();
 			}
 
 			freeaddrinfo(result);
@@ -145,10 +162,12 @@ class server_
 				//save client socket into our struct table
 				clients[number_of_clients].ss = ClientSocket;
 				clients[number_of_clients].connected = TRUE;
+				clients[number_of_clients].address = server;
 				//and of course we need a calculator too
 				number_of_clients++;
 
 				cout << "New client: " << ClientSocket << endl;
+				return 1;
 
 				/*printf("accept failed with error: %d\n", WSAGetLastError());
 				closesocket(ListenSocket);
@@ -190,7 +209,7 @@ class server_
 			}
 		int receive_data(SOCKET socket, char *data, int maxlen)
 			{
-			int iResult = recv(ClientSocket, data, maxlen, MSG_WAITALL);
+			int iResult = recv(socket, data, maxlen, 0);
 			/*if (iResult > 0)
 			printf("Bytes received: %d\n", iResult);
 			else if (iResult == 0)
@@ -227,14 +246,18 @@ class server_
 				listen_to_clients();
 				for (int ii = 0; ii < number_of_clients; ii++) {
 					if (clients[ii].connected) {
+						//cout << "Client " << clients[ii].ss << " still connected" << endl;
 						int res = receive_data(clients[ii].ss, temp.get_address(), temp.get_size());
 
 						if (res <= 0) {
-							//error or connection closed
-							cout << "Client disconnected" << endl;
-							clients[ii].connected = FALSE;
-							client_data[ii] = client_data_packet_();
-							number_of_clients--;
+							int error = WSAGetLastError();
+							if (error != WSAEWOULDBLOCK) {
+								//error or connection closed
+								cout << "Client disconnected" << endl;
+								clients[ii].connected = FALSE;
+								client_data[ii] = client_data_packet_();
+								number_of_clients--;
+							}
 						}
 						else {
 							client_data[ii] = temp;
@@ -270,6 +293,6 @@ class server_
 	};
 
 	void set_outgoing_data_packet(server_data_packet_ &data);
-	void get_incomming_data_packet(client_data_packet_ &data);
+	void get_incoming_data_packet(client_data_packet_ &data);
 	void get_all_incoming_data(client_data_packet_ *data[]);
 	void start_server(int port = 27015);

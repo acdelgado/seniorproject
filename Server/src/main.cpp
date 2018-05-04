@@ -636,11 +636,12 @@ int main(int argc, char **argv)
 
 	while (true) {
 		int active = 0;
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < MAX_CLIENTS; i++) {
 			if (allData[i].dataint[0] != 0) {
-				outgoing.dataint[active] = allData[i].dataint[i];
-				outgoing.datafloat[active] = allData[i].datafloat[0];
-				outgoing.datafloat[active + 1] = allData[i].datafloat[1];
+				outgoing.dataint[active] = allData[i].dataint[0];
+				for (int j = 0; j < 4; j++) {
+					outgoing.datafloat[active * 4 + j] = allData[i].datafloat[j];
+				}
 				active++;
 			}
 		}
