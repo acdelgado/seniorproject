@@ -181,16 +181,16 @@ public:
 		glGenBuffers(1, &VBO);
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		GLfloat *ver = new GLfloat[18];
+		data = new GLfloat[18];
 		int verc = 0;
-		ver[verc++] = -1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-		ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-		ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
-		ver[verc++] = 1.0, ver[verc++] = -1.0, ver[verc++] = 0.0;
-		ver[verc++] = 1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
-		ver[verc++] = -1.0, ver[verc++] = 1.0, ver[verc++] = 0.0;
+		data[verc++] = -1.0, data[verc++] = -1.0, data[verc++] = 0.0;
+		data[verc++] = 1.0, data[verc++] = -1.0, data[verc++] = 0.0;
+		data[verc++] = -1.0, data[verc++] = 1.0, data[verc++] = 0.0;
+		data[verc++] = 1.0, data[verc++] = -1.0, data[verc++] = 0.0;
+		data[verc++] = 1.0, data[verc++] = 1.0, data[verc++] = 0.0;
+		data[verc++] = -1.0, data[verc++] = 1.0, data[verc++] = 0.0;
 		//actually memcopy the data - only do this once
-		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), ver, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), data, GL_STATIC_DRAW);
 		//we need to set up the vertex array
 		glEnableVertexAttribArray(0);
 		//key function to get up how many elements to pull out at a time (3)
@@ -256,17 +256,11 @@ Billboard sprite;
 
 class Application : public EventCallbacks
 {
-	typedef std::set<Asteroid *> Asteroids;
-	typedef std::set<Bullet *> Bullets;
 public:
-	Asteroids asteroids;
-	Bullets bullets;
-	shared_ptr<Ship> ship;
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program
-	std::shared_ptr<Program> prog;
-	std::shared_ptr<Program> prog2,laserprog,shipprog,billprog,scoreprog;
+	std::shared_ptr<Program> scoreprog;
 
 	// Shape to be used (from obj file)
 	shared_ptr<Shape> shape;
@@ -278,23 +272,9 @@ public:
 	//texture for sim
 	GLuint Texture;
 	GLuint Texture2,Texture3,Texture4,Texture5,TextureExplosion;
-	GLuint TextureScore;
-
-	// Contains vertex information for OpenGL
-	GLuint VertexArrayIDBox;
-
-	// Data necessary to give our triangle to OpenGL
-	GLuint VertexBufferIDBox,VertexBufferTex;
-
-	
 
 	int t = 0;
-	float lasershot = 0;
-	float destroyed = 5;
 	vec2 offset = vec2(0, 0);
-	vec2 dig1 = vec2(0.7, 0.1);
-	vec2 dig2 = vec2(0.7, 0.1);
-	vec2 dig3 = vec2(0.7, 0.1);
 
 	CXBOXController *gamepad = new CXBOXController(1); //1 would be the only one or the fist one of max 4 controller
 
@@ -378,93 +358,10 @@ public:
 		//This is the standard:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
 
-		// Initialize the GLSL program.
-		prog = make_shared<Program>();
-		prog->setVerbose(true);
-		prog->setShaderNames(resourceDirectory + "simple_vert.glsl", resourceDirectory + "simple_frag.glsl");
-		if (! prog->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		prog->init();
-		prog->addUniform("P");
-		prog->addUniform("V");
-		prog->addUniform("M");
-		prog->addUniform("campos");
-		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
-		prog->addAttribute("vertTex");
-		prog->addAttribute("vertTan");
-		prog->addAttribute("vertBinorm");
-
-		prog2 = make_shared<Program>();
-		prog2->setVerbose(true);
-		prog2->setShaderNames(resourceDirectory + "vert.glsl", resourceDirectory + "frag_nolight.glsl");
-		if (!prog2->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		prog2->init();
-		prog2->addUniform("P");
-		prog2->addUniform("V");
-		prog2->addUniform("M");
-		prog2->addAttribute("vertPos");
-		prog2->addAttribute("vertTex");
-
-
-		shipprog = make_shared<Program>();
-		shipprog->setVerbose(true);
-		shipprog->setShaderNames(resourceDirectory + "shipvert.glsl", resourceDirectory + "shipfrag.glsl");
-		if (!shipprog->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		shipprog->init();
-		shipprog->addUniform("P");
-		shipprog->addUniform("V");
-		shipprog->addUniform("M");
-		shipprog->addAttribute("vertPos");
-		shipprog->addAttribute("vertNor");
-		shipprog->addAttribute("vertTex");
-		shipprog->addUniform("campos");
-
-		laserprog = make_shared<Program>();
-		laserprog->setVerbose(true);
-		laserprog->setShaderNames(resourceDirectory + "laservert.glsl", resourceDirectory + "laserfrag.glsl");
-		laserprog->init();
-		if (!laserprog->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		laserprog->addUniform("P");
-		laserprog->addUniform("V");
-		laserprog->addUniform("M");
-		laserprog->addAttribute("vertPos");
-
-		billprog = make_shared<Program>();
-		billprog->setVerbose(true);
-		billprog->setShaderNames(resourceDirectory + "billvert.glsl", resourceDirectory + "billfrag.glsl");
-		if (!billprog->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		billprog->init();
-		billprog->addUniform("P");
-		billprog->addUniform("V");
-		billprog->addUniform("offset");
-		billprog->addUniform("vpws");
-		billprog->addAttribute("vertPos");
-		billprog->addAttribute("vertTex");
-
 		scoreprog = make_shared<Program>();
 		scoreprog->setVerbose(true);
 		scoreprog->setShaderNames(resourceDirectory + "scorevert.glsl", resourceDirectory + "scorefrag.glsl");
-		if (!billprog->init())
+		if (!scoreprog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
 			exit(1);
@@ -480,8 +377,6 @@ public:
 
 		
 	}
-
-
 
 	void initGeom(const std::string& resourceDirectory) 
 	{
