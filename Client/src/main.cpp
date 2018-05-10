@@ -63,10 +63,11 @@ public:
 	void process(float ftime)
 	{
 		pos += impulse * ftime;
-		impulse.y -= 15* ftime;
-		if (pos.y < 1)
+		impulse.y -= 20* ftime;
+		if (pos.y < -20) //death fall y-value
 		{
-			pos.y = 1;
+			pos.x = -5;
+			pos.y = 0;
 			impulse.y = 0;
 		}
 		
@@ -91,7 +92,7 @@ public:
 	float z;
 	float frame;
 	
-	void init( BillboardData *bbd, string resourceDir)
+	void init(BillboardData *bbd, string resourceDir)
 	{
 		name = bbd->name;
 		z = bbd->points[0][2];
@@ -124,9 +125,17 @@ public:
 		glGenBuffers(1, &TexBuffer);
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, TexBuffer);
-		
+
+		GLfloat *cube_tex = new GLfloat[12];
+		int texc = 0;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 1;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 0;
+		cube_tex[texc++] = 1, cube_tex[texc++] = 1;
+		cube_tex[texc++] = 0, cube_tex[texc++] = 1;
 		//actually memcopy the data - only do this once
-		glBufferData(GL_ARRAY_BUFFER, bbd->texcoords.size() * sizeof(vec2), &bbd->texcoords[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), cube_tex, GL_STATIC_DRAW);
 		//we need to set up the vertex array
 		glEnableVertexAttribArray(2);
 		//key function to get up how many elements to pull out at a time (3)
@@ -148,7 +157,7 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		
+
 	}
 
 	void bindToProg(shared_ptr<Program> *program) 
@@ -279,7 +288,7 @@ public:
 
 	
 
-	int points = 0;
+	int t = 0;
 	float lasershot = 0;
 	float destroyed = 5;
 	vec2 offset = vec2(0, 0);
@@ -327,29 +336,6 @@ public:
 		{
 			mycam.d = 0;
 		}
-		//if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-		//{
-		//	player.impulse.x = 5;
-		//}
-		//if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
-		//{
-		//	bool isNeg = player.impulse.x < 0;
-		//	player.impulse.x = 0;
-		//}
-		//if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
-		//{
-		//	//player.impulse.x = min(player.impulse.x - 1, float(-5.0));
-		//	player.impulse.x = -5;
-		//}
-		//if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
-		//{
-		//	player.impulse.x = 0;
-		//}
-		//if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-		//{
-		//	if(player.impulse.y == 0.0)
-		//		player.impulse.y = 15;
-		//}
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -488,6 +474,7 @@ public:
 		scoreprog->addUniform("V");
 		scoreprog->addUniform("M");
 		scoreprog->addUniform("offset");
+		scoreprog->addUniform("animate");
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
@@ -499,7 +486,7 @@ public:
 	void initGeom(const std::string& resourceDirectory) 
 	{
 
-		sprite.init(&scoreprog, 0, resourceDirectory + "mario.png");
+		sprite.init(&scoreprog, 0, resourceDirectory + "smol_idle.png");
 
 		BillboardFile test = BillboardFile(resourceDirectory + "level2.grl");
 		vector<BillboardData> things = test.getAll();
@@ -534,9 +521,9 @@ public:
 					player.pos.x = minX - 1;
 				}
 
-				if (inSquare(vec2(player.pos.x, player.pos.y - 1), minX, maxX, minY, maxY))
+				if (inSquare(vec2(player.pos.x, player.pos.y - 0.8), minX, maxX, minY, maxY))
 				{
-					player.pos.y = maxY + 1;
+					player.pos.y = maxY + 0.8;
 					player.impulse.y = 0;
 				}
 
@@ -604,17 +591,30 @@ public:
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 
-		vec2 scorecoord = vec2(0, 0);
-		glUniform2fv(scoreprog->getUniform("offset"), 1, &scorecoord.x);
-
+		t++;
+		if (t % 5 == 0) {
+			offset.x += 1 / 3.0f;
+			if (offset.x == 1) {
+				offset.x = 0;
+				offset.y += 1 / 3.0f;
+				if (offset.y == 1) offset.y = 0;
+			}
+			if (offset.x == 1 / 3.0f && offset.y == 0)
+			{
+				offset.x = 0;
+				offset.y = 1 / 3.0f;
+			}
+		}
+		glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
+		glUniform1f(scoreprog->getUniform("animate"), 0);
 		glActiveTexture(GL_TEXTURE0);
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
 			//if (bill[ii].z == 0)
-				bill[ii].draw(&scoreprog, depth, scorecoord.x, scorecoord.y);
+				bill[ii].draw(&scoreprog, depth, 0, 0);
 		}
-
+		glUniform1f(scoreprog->getUniform("animate"), 1);
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			character temp = it->second;
 			temp.process(ftime);
@@ -622,6 +622,7 @@ public:
 		}
 
 		player.process(ftime);
+
 
 		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
 		scoreprog->unbind();
