@@ -645,10 +645,14 @@ int main(int argc, char **argv)
 				active++;
 			}
 		}
+		for (int i = active; i < MAX_CLIENTS; i++) {
+			outgoing.dataint[i] = 0;
+			for (int j = 0; j < 4; j++) {
+				outgoing.datafloat[i * 4 + j] = 0.0;
+			}
+		}
 		set_outgoing_data_packet(outgoing);
 
-		//cout << received.datafloat[0] << endl;
-		//cout << received.datafloat[1] << endl;
 	}
 
 

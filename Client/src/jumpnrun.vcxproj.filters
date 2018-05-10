@@ -17,6 +17,7 @@
     <ClCompile Include="BillboardData.cpp" />
     <ClCompile Include="client.cpp" />
     <ClCompile Include="cserver.cpp" />
+    <ClCompile Include="Stopwatch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Program.h" />

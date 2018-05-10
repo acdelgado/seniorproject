@@ -61,8 +61,10 @@ class server_data_packet_
 
 	};
 
-#define CLIENT_DATA_INT 256
-#define CLIENT_DATA_FLOAT 1024
+#define CLIENT_DATA_INT 16
+#define CLIENT_DATA_FLOAT 32
+//#define CLIENT_DATA_INT 256
+//#define CLIENT_DATA_FLOAT 1024
 class client_data_packet_
 	{
 	private:
@@ -82,24 +84,24 @@ class client_data_packet_
 			{
 			lock();
 			rhs.lock();
-			for (int ii = 0; ii < DATA_FLOAT; ii++)
+			for (int ii = 0; ii < CLIENT_DATA_FLOAT; ii++)
 				datafloat[ii] = rhs.datafloat[ii];
-			for (int ii = 0; ii < DATA_INT; ii++)
+			for (int ii = 0; ii < CLIENT_DATA_INT; ii++)
 				dataint[ii] = rhs.dataint[ii];
 			rhs.unlock();
 			unlock();
 			}
 		client_data_packet_()
 			{
-			for (int ii = 0; ii < DATA_INT; ii++)
+			for (int ii = 0; ii < CLIENT_DATA_INT; ii++)
 				dataint[ii] = 0;
-			for (int ii = 0; ii < DATA_FLOAT; ii++)
+			for (int ii = 0; ii < CLIENT_DATA_FLOAT; ii++)
 				datafloat[ii] = 0.0;
 			}
 		//-------------------------------------------------------------------------
 		int get_size()
 			{
-			return DATA_INT * sizeof(int) + DATA_FLOAT * sizeof(float);
+			return CLIENT_DATA_INT * sizeof(int) + CLIENT_DATA_FLOAT * sizeof(float);
 			}
 		char *get_address()
 			{

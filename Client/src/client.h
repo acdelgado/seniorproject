@@ -32,6 +32,8 @@
 #pragma once
 
 #include "data_packet.h"
+#include "Stopwatch.h"
+#include <iostream>
 
 
 
@@ -41,6 +43,9 @@
 
 #define DEFAULT_BUFLEN 4096
 #define DEFAULT_PORT "27015"
+
+using namespace std;
+
 
 class client_
 	{
@@ -140,7 +145,11 @@ class client_
 			}
 		int receive_data(char *data,int maxlen)
 			{
+			StopWatchMicro_ sw;
+			sw.start();
+			//cout << "before recv: " << sw.elapse_micro() << endl;
 			int iResult = recv(ConnectSocket, data, maxlen, MSG_WAITALL);
+			//cout << "after recv: " << sw.elapse_micro() << endl;
 			/*if (iResult > 0)
 				printf("Bytes received: %d\n", iResult);
 			else if (iResult == 0)
@@ -168,14 +177,22 @@ class client_
 			bool running = true;
 			client_data_packet_ temp;
 			server_data_packet_ temp_server_data;
+			StopWatchMicro_ sw;
+			sw.start();
+
 			while (running)
 				{
 				temp = my_data;
+				//cout << "before send: " << sw.elapse_micro() << endl;
 				int res = send(ConnectSocket, temp.get_address(), temp.get_size(), 0);
+				//cout << "after send: " << sw.elapse_micro() << endl;
+
 				if (res <= 0)break;//error or connection closed
+
 				res = receive_data(temp_server_data.get_address(), temp_server_data.get_size());
 				if (res <= 0)break;//error or connection closed
 				server_data_packet = temp_server_data;
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 				}
 
 			return shutdown_and_cleanup();

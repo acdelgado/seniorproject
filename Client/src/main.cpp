@@ -11,6 +11,7 @@
 #include <ctime>
 #include <glad/glad.h>
 #include <set>
+#include <unordered_map>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -34,9 +35,11 @@
 #include "BillboardFile.h"
 #include "client.h"
 #include "cserver.h"
+#include "Stopwatch.h"
 
 using namespace std;
 using namespace glm;
+
 double get_last_elapsed_time()
 {
 	static double lasttime = glfwGetTime();
@@ -45,6 +48,8 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
+
+
 class character
 {
 public:
@@ -69,7 +74,7 @@ public:
 };
 
 character player;
-character other;
+unordered_map<int, character> others;
 
 class Billboard {
 public:
@@ -322,6 +327,29 @@ public:
 		{
 			mycam.d = 0;
 		}
+		//if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+		//{
+		//	player.impulse.x = 5;
+		//}
+		//if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
+		//{
+		//	bool isNeg = player.impulse.x < 0;
+		//	player.impulse.x = 0;
+		//}
+		//if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+		//{
+		//	//player.impulse.x = min(player.impulse.x - 1, float(-5.0));
+		//	player.impulse.x = -5;
+		//}
+		//if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
+		//{
+		//	player.impulse.x = 0;
+		//}
+		//if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+		//{
+		//	if(player.impulse.y == 0.0)
+		//		player.impulse.y = 15;
+		//}
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -587,10 +615,14 @@ public:
 				bill[ii].draw(&scoreprog, depth, scorecoord.x, scorecoord.y);
 		}
 
-		other.process(ftime);
+		for (auto it = others.begin(); it != others.end(); ++it) {
+			character temp = it->second;
+			temp.process(ftime);
+			sprite.draw(&scoreprog, depth, temp.pos.x, temp.pos.y);
+		}
+
 		player.process(ftime);
 
-		sprite.draw(&scoreprog, depth, other.pos.x, other.pos.y);
 		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
 		scoreprog->unbind();
 
@@ -605,6 +637,9 @@ public:
 //*********************************************************************************************************
 int main(int argc, char **argv)
 {
+	StopWatchMicro_ sw;
+	sw.start();
+
 	// Where the resources are loaded from
 	std::string resourceDir = "../resources/";
 
@@ -640,33 +675,41 @@ int main(int argc, char **argv)
 	int id = rand() + 1;
 	cp.dataint[0] = id;
 
+	long double last_send = sw.elapse_milli();
+
 	// Loop until the user closes the window.
 	while (! glfwWindowShouldClose(windowManager->getHandle()))
 	{
 		// Render scene.
 		application->render();
-		
+
 		/*if (player.impulse.x != 0 || player.impulse.y > 0 || player.impulse.y < -0.30) {*/
-		cp.datafloat[0] = player.pos.x;
-		cp.datafloat[1] = player.pos.y;
-		cp.datafloat[2] = player.impulse.x;
-		cp.datafloat[3] = player.impulse.y;
+		if (sw.elapse_milli() > last_send + 5) {
+			cp.datafloat[0] = player.pos.x;
+			cp.datafloat[1] = player.pos.y;
+			cp.datafloat[2] = player.impulse.x;
+			cp.datafloat[3] = player.impulse.y;
+			set_outgoing_data_packet(cp);
 
-		set_outgoing_data_packet(cp);
-		get_incomming_data_packet(incoming);
+			last_send = sw.elapse_milli();
 
-		if (incoming.dataint[0] == id) {
-			other.pos.x = incoming.datafloat[4];
-			other.pos.y = incoming.datafloat[5];
-			other.impulse.x = incoming.datafloat[6];
-			other.impulse.y = incoming.datafloat[7];
+			get_incomming_data_packet(incoming);
+			others.clear();
+
+			for (int i = 0; i < 50; i++) {
+				if (incoming.dataint[i] != 0) {
+					int tempid = incoming.dataint[i];
+					if (tempid == id)
+						continue;
+					others[tempid].pos.x = incoming.datafloat[4 * i];
+					others[tempid].pos.y = incoming.datafloat[4 * i + 1];
+					others[tempid].impulse.x = incoming.datafloat[4 * i + 2];
+					others[tempid].impulse.y = incoming.datafloat[4 * i + 3];
+				}
+			}
 		}
-		else {
-			other.pos.x = incoming.datafloat[0];
-			other.pos.y = incoming.datafloat[1];
-			other.impulse.x = incoming.datafloat[2];
-			other.impulse.y = incoming.datafloat[3];
-		}
+
+		
 			/*cout << "sending position" << endl;
 		}*/
 

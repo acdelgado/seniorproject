@@ -32,11 +32,14 @@
 
 #pragma once
 #include "data_packet.h"
+#include "Stopwatch.h"
 #include <iostream>
+#include <vector>
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
+
 
 #define MAX_CLIENTS 50
 
@@ -61,7 +64,7 @@ class server_
 		SOCKET ListenSocket = INVALID_SOCKET;
 		SOCKET ClientSocket = INVALID_SOCKET;
 
-
+		bool running = true;
 		struct addrinfo *result = NULL;
 		struct addrinfo hints;
 
@@ -150,7 +153,7 @@ class server_
 			return 0;
 			}
 		//-----------------------------------------------------
-		int listen_to_clients()
+		int check_for_new_clients()
 			{
 
 			len = sizeof(server);
@@ -167,16 +170,20 @@ class server_
 				number_of_clients++;
 
 				cout << "New client: " << ClientSocket << endl;
-				return 1;
+
+
+
+				return number_of_clients-1;
 
 				/*printf("accept failed with error: %d\n", WSAGetLastError());
 				closesocket(ListenSocket);
 				WSACleanup();
 				return 1;*/
+
 			}
-			// No longer need server socket
-			//closesocket(ListenSocket);
-			return 0;
+
+		
+			return -1;
 			}
 		//-----------------------------------------------------
 		int shutdown_and_cleanup()
@@ -233,45 +240,74 @@ class server_
 			return true;
 			}
 		//----------------------------------------------------------------------------------------------------------------
+		void loop_client(int clientnum)
+			{
+			if (!clients[clientnum].connected)
+				return;
+			client_data_packet_ temp;
+			server_data_packet_ temp_server_data;
+			bool connection_error = FALSE;
+			StopWatchMicro_ sw;
+			sw.start();
+			while (running)
+				{
+				//cout << "Client " << clients[ii].ss << " still connected" << endl;
+				//cout << clientnum<<"    before recv: "<<sw.elapse_micro() << endl;
+				int res = receive_data(clients[clientnum].ss, temp.get_address(), temp.get_size());
+				//cout << clientnum << "  after recv: " << sw.elapse_micro() << "   res:   " << res<< endl;
+				if (res <= 0 && WSAGetLastError() != WSAEWOULDBLOCK)
+					{
+					connection_error = TRUE;
+					break;
+					}
+				client_data[clientnum] = temp;					
+				this_thread::sleep_for(chrono::milliseconds(5));
+				temp_server_data = data_packet;
+				//cout << clientnum << "  before send: " << sw.elapse_micro() << endl;
+				res = send(clients[clientnum].ss, temp_server_data.get_address(), temp_server_data.get_size(), 0);
+				//cout << clientnum << "  after send: " << sw.elapse_micro() << "   res:   " << res << endl;
+				if (res == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK)
+					{
+					connection_error = TRUE;
+					break;
+					}
+					
+				this_thread::sleep_for(chrono::milliseconds(5));
+				}
+
+			if (connection_error == TRUE)
+				{
+				int error = WSAGetLastError();
+				//if (error != WSAEWOULDBLOCK) 
+				{
+					//error or connection closed
+					cout << "Client disconnected" << endl;
+					cout << "Client error: " << error << endl;
+					clients[clientnum].connected = FALSE;
+					client_data[clientnum] = client_data_packet_();
+					number_of_clients--;
+					}
+				}
+			}
 		public:
 			void run(int port)
 			{
 			if (!init_connection(port))
 				return;
-			bool running = true;
-			client_data_packet_ temp;
-			server_data_packet_ temp_server_data;
+			vector<thread> clientthreads;
+			
 			while (running)
 				{
-				listen_to_clients();
-				for (int ii = 0; ii < number_of_clients; ii++) {
-					if (clients[ii].connected) {
-						//cout << "Client " << clients[ii].ss << " still connected" << endl;
-						int res = receive_data(clients[ii].ss, temp.get_address(), temp.get_size());
-
-						if (res <= 0) {
-							int error = WSAGetLastError();
-							if (error != WSAEWOULDBLOCK) {
-								//error or connection closed
-								cout << "Client disconnected" << endl;
-								clients[ii].connected = FALSE;
-								client_data[ii] = client_data_packet_();
-								number_of_clients--;
-							}
-						}
-						else {
-							client_data[ii] = temp;
-						}
-					}
-					
-				}
-				temp_server_data = data_packet;
-				for (int ii = 0; ii < number_of_clients; ii++)
+				this_thread::sleep_for(chrono::milliseconds(100));
+				int clientnum = check_for_new_clients();
+				if (clientnum >= 0)
 					{
-					int res = send(clients[ii].ss, temp_server_data.get_address(), temp_server_data.get_size(),0);
-					if (res == SOCKET_ERROR)break;//error or connection closed
+					clientthreads.push_back(thread(&server_::loop_client,this, clientnum));
 					}
 				}
+			for (int i = 0; i < clientthreads.size(); i++)
+				clientthreads[i].join();
+				
 
 			close_connection();			
 			}
@@ -294,5 +330,5 @@ class server_
 
 	void set_outgoing_data_packet(server_data_packet_ &data);
 	void get_incoming_data_packet(client_data_packet_ &data);
-	void get_all_incoming_data(client_data_packet_ *data[]);
+	void get_all_incoming_data(client_data_packet_ **data);
 	void start_server(int port = 27015);
