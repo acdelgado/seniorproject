@@ -1,0 +1,8 @@
+Client/Debug
+Client/.vs
+Client/Debug/*
+Client/.vs/*
+Server/Debug
+Server/.vs
+Server/Debug/*
+Server/.vs/*
