@@ -52,25 +52,45 @@ double get_last_elapsed_time()
 
 class character
 {
+private:
+	StopWatchMicro_ timer = StopWatchMicro_();
 public:
-	vec2 pos,impulse;
+	vec2 pos, impulse;
 	int lifes;
+	long double jump_start;
 	character()
 	{
 		pos = vec2(-10, 0);
 		impulse = vec2(0, 0);
+		timer.start();
 	}
 	void process(float ftime)
 	{
 		pos += impulse * ftime;
-		impulse.y -= 20* ftime;
+		impulse.y -= 30 * ftime;
 		if (pos.y < -20) //death fall y-value
 		{
-			pos.x = -5;
-			pos.y = 0;
-			impulse.y = 0;
+			this->reset();
 		}
-		
+
+	}
+
+	void start_jump()
+	{
+		timer.start();
+		jump_start = timer.elapse_milli();
+	}
+
+	bool end_jump()
+	{
+		return timer.elapse_milli() > jump_start + (300);
+	}
+
+	void reset()
+	{
+		pos.x = -10;
+		pos.y = 1;
+		impulse.y = 0;
 	}
 };
 
@@ -420,11 +440,18 @@ public:
 				{
 					player.pos.y = maxY + 0.8;
 					player.impulse.y = 0;
+					if (bill[ii].name == "upspike") {
+						player.reset();
+					}
 				}
 
 				if (inSquare(vec2(player.pos.x, player.pos.y + 1), minX, maxX, minY, maxY))
 				{
 					player.pos.y = minY - 1;
+					player.impulse.y = -1;
+					if (bill[ii].name == "downspike") {
+						player.reset();
+					}
 				}
 			}
 		}
@@ -436,8 +463,13 @@ public:
 			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
 			{
 
-				if (player.impulse.y == 0.0)
-					player.impulse.y = 15;
+				if (player.impulse.y == 0.0) {
+					player.start_jump();
+					player.impulse.y = 10.0;
+				}
+				if (!player.end_jump()) {
+					player.impulse.y = min(player.impulse.y + 1.5, 12.5);
+				}
 			}
 
 
