@@ -6,3 +6,6 @@ Server/Debug
 Server/.vs
 Server/Debug/*
 Server/.vs/*
+desktop.ini
+Client/desktop.ini
+Server/desktop.ini
