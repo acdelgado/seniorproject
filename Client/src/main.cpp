@@ -58,6 +58,8 @@ public:
 	vec2 pos, impulse;
 	int lifes;
 	long double jump_start;
+	bool moving;
+	bool jumping;
 	character()
 	{
 		pos = vec2(-10, 0);
@@ -66,12 +68,22 @@ public:
 	}
 	void process(float ftime)
 	{
+		if (impulse.y == 0 && !moving && impulse.x != 0) {
+			if (impulse.x > 0) {
+				impulse.x = max(impulse.x - 30.0 * ftime, 0.0);
+			}
+			else {
+				impulse.x = min(impulse.x + 30.0 * ftime, 0.0);
+			}
+		}
+
 		pos += impulse * ftime;
 		impulse.y -= 30 * ftime;
 		if (pos.y < -20) //death fall y-value
 		{
 			this->reset();
 		}
+		
 
 	}
 
@@ -462,14 +474,17 @@ public:
 			
 			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
 			{
-
-				if (player.impulse.y == 0.0) {
+				if (!player.jumping && player.impulse.y == 0.0) {
+					player.jumping = true;
 					player.start_jump();
 					player.impulse.y = 10.0;
 				}
-				if (!player.end_jump()) {
+				else if (player.jumping && !player.end_jump()) {
 					player.impulse.y = min(player.impulse.y + 1.5, 12.5);
 				}
+			}
+			else if (player.impulse.y == 0.0) {
+				player.jumping = false;
 			}
 
 
@@ -478,13 +493,22 @@ public:
 
 			if (lx > 3000 || lx < (-3000))
 			{
+				double max_speed = 6.0;
+				if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_X) {
+					max_speed = 10.0;
+				}
+				player.moving = true;
 				float nx = (float)lx / 32000.0;
-				player.impulse.x = nx * 4;
+				if (nx > 0) {
+					player.impulse.x = min(player.impulse.x + 0.5 * nx, max_speed);
+				}
+				else {
+					player.impulse.x = max(player.impulse.x + 0.5 * nx, -max_speed);
+				}
 
 			}
 			else
-				player.impulse.x = 0;
-
+				player.moving = false;
 
 		}
 
