@@ -643,13 +643,14 @@ int main(int argc, char **argv)
 	long double last = sw.elapse_milli();
 	int diff = 15;
 
-	cout << sizeof(gameData) << endl;
 
 	while (true) {
 		if (sw.elapse_milli() > last + diff) {
 			last = sw.elapse_milli();
-			gd.camera_pos.y -= 0.02;
+			gd.camera_pos.y -= 0.01;
 		}
+
+
 		
 		copyClientsToGameData(&gd, allData);
 		copyToServerPacket(&gd, &outgoing);
