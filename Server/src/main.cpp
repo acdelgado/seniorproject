@@ -32,6 +32,8 @@
 #include "BillboardFile.h"
 #include "client.h"
 #include "cserver.h"
+#include "GameData.h"
+#include "Stopwatch.h"
 
 using namespace std;
 using namespace glm;
@@ -628,29 +630,30 @@ int main(int argc, char **argv)
 
 	start_server(27015);
 
-	client_data_packet_ received;
 	client_data_packet_ *allData;
 	server_data_packet_ outgoing;
 
 	get_all_incoming_data(&allData);
 
+	gameData gd;
+	gd.level = 1;
+
+	StopWatchMicro_ sw;
+	sw.start();
+	long double last = sw.elapse_milli();
+	int diff = 15;
+
+	cout << sizeof(gameData) << endl;
+
 	while (true) {
-		int active = 0;
-		for (int i = 0; i < MAX_CLIENTS; i++) {
-			if (allData[i].dataint[0] != 0) {
-				outgoing.dataint[active] = allData[i].dataint[0];
-				for (int j = 0; j < 4; j++) {
-					outgoing.datafloat[active * 4 + j] = allData[i].datafloat[j];
-				}
-				active++;
-			}
+		if (sw.elapse_milli() > last + diff) {
+			last = sw.elapse_milli();
+			gd.camera_pos.y -= 0.02;
 		}
-		for (int i = active; i < MAX_CLIENTS; i++) {
-			outgoing.dataint[i] = 0;
-			for (int j = 0; j < 4; j++) {
-				outgoing.datafloat[i * 4 + j] = 0.0;
-			}
-		}
+		
+		copyClientsToGameData(&gd, allData);
+		copyToServerPacket(&gd, &outgoing);
+
 		set_outgoing_data_packet(outgoing);
 
 	}

@@ -144,6 +144,7 @@
     <ClInclude Include="client.h" />
     <ClInclude Include="cserver.h" />
     <ClInclude Include="data_packet.h" />
+    <ClInclude Include="GameData.h" />
     <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="Program.h" />

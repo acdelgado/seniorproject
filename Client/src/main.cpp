@@ -36,6 +36,7 @@
 #include "client.h"
 #include "cserver.h"
 #include "Stopwatch.h"
+#include "GameData.h"
 
 using namespace std;
 using namespace glm;
@@ -626,6 +627,8 @@ int main(int argc, char **argv)
 	/*start_client("129.65.221.104", 27015);*/
 	start_client("127.0.0.1", 27015);
 
+	gameData game;
+
 	client_data_packet_ cp;
 	server_data_packet_ incoming;
 	srand(time(NULL));
@@ -653,17 +656,18 @@ int main(int argc, char **argv)
 			get_incomming_data_packet(incoming);
 			others.clear();
 
-			for (int i = 0; i < 50; i++) {
-				if (incoming.dataint[i] != 0) {
-					int tempid = incoming.dataint[i];
+			getFromServerPacket(&game, &incoming);
+
+			for (int i = 0; i < MAX_PLAYERS; i++) {
+				if (game.players[i].id != 0) {
+					int tempid = game.players[i].id;
 					if (tempid == id)
 						continue;
-					others[tempid].pos.x = incoming.datafloat[4 * i];
-					others[tempid].pos.y = incoming.datafloat[4 * i + 1];
-					others[tempid].impulse.x = incoming.datafloat[4 * i + 2];
-					others[tempid].impulse.y = incoming.datafloat[4 * i + 3];
+					others[tempid].pos = game.players[i].position;
+					others[tempid].impulse = game.players[i].impulse;
 				}
 			}
+			application->mycam.pos.y = game.camera_pos.y;
 		}
 
 		

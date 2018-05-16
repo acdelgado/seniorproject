@@ -34,6 +34,8 @@
     <ClInclude Include="data_packet.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="cserver.h" />
+    <ClInclude Include="GameData.h" />
+    <ClInclude Include="Stopwatch.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">
