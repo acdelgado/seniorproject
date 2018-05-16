@@ -258,7 +258,7 @@ class server_
 				if (res <= 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 					{
 					connection_error = TRUE;
-					break;
+					break;	
 					}
 				client_data[clientnum] = temp;					
 				this_thread::sleep_for(chrono::milliseconds(5));

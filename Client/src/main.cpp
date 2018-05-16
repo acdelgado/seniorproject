@@ -440,11 +440,13 @@ public:
 
 				if (inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
 				{
+					player.impulse.x = 2;
 					player.pos.x = maxX + 1;
 				}
 
 				if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
 				{
+					player.impulse.x = -2;
 					player.pos.x = minX - 1;
 				}
 
@@ -511,6 +513,9 @@ public:
 				player.moving = false;
 
 		}
+
+		// TESTING FOR UPSCROLLING LEVEL
+		//mycam.pos.y -= 2 * ftime;
 
 		// Get current frame buffer size.
 		int width, height;
