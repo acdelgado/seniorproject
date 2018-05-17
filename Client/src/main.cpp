@@ -103,6 +103,7 @@ public:
 	{
 		pos.x = -10;
 		pos.y = 1;
+		impulse.x = 0;
 		impulse.y = 0;
 	}
 };
