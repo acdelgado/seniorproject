@@ -645,10 +645,10 @@ int main(int argc, char **argv)
 
 
 	while (true) {
-		//if (sw.elapse_milli() > last + diff) {
-		//	last = sw.elapse_milli();
-		//	gd.camera_pos.y -= 0.01;
-		//}
+		if (gd.active && sw.elapse_milli() > last + diff) {
+			last = sw.elapse_milli();
+			gd.camera_pos.y -= 0.01;
+		}
 
 
 		
