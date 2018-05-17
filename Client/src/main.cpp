@@ -286,7 +286,7 @@ public:
 };
 
 vector<Billboard> bill;
-Billboard sprite, sprite_w;
+Billboard sprite, sprite_w, sprite_r, sprite_j;
 
 class Application : public EventCallbacks
 {
@@ -425,6 +425,8 @@ public:
 
 		sprite.init(&scoreprog, 0, resourceDirectory + "smol_idle.png");
 		sprite_w.init(&scoreprog, 0, resourceDirectory + "sprite_walk.png");
+		sprite_r.init(&scoreprog, 0, resourceDirectory + "smol_run.png");
+		sprite_j.init(&scoreprog, 0, resourceDirectory + "smol_jump.png");
 		BillboardFile test = BillboardFile(resourceDirectory + "level2.grl");
 		vector<BillboardData> things = test.getAll();
 		bill.resize(things.size());
@@ -605,8 +607,13 @@ public:
 
 		if (player.impulse.x == 0)
 			sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
-		else
+		else if(player.impulse.y > 0)
+			sprite_j.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
+		else if (abs(player.impulse.x) <= 6)
 			sprite_w.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
+		else {
+			sprite_r.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
+		}
 		scoreprog->unbind();
 
 	}
