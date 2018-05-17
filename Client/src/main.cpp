@@ -270,13 +270,13 @@ public:
 		glUniform1i(TexLocation, 0);
 	}
 
-	void draw(shared_ptr<Program> *program, bool depthTest, float x, float y)
+	void draw(shared_ptr<Program> *program, bool depthTest, float x, float y, float epsilon)
 	{
 		if (!depthTest)
 			glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(VAO);
 
-		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-50));
+		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-epsilon-50));
 		glUniformMatrix4fv((*program)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -285,7 +285,7 @@ public:
 };
 
 vector<Billboard> bill;
-Billboard sprite;
+Billboard sprite, sprite_w;
 
 class Application : public EventCallbacks
 {
@@ -311,7 +311,7 @@ public:
 	bool hostStarting;
 	int id;
 
-	int t = 0;
+	int t = 0, animate = 1;
 	vec2 offset = vec2(0, 0);
 
 	CXBOXController *gamepad = new CXBOXController(1); //1 would be the only one or the fist one of max 4 controller
@@ -423,7 +423,7 @@ public:
 	{
 
 		sprite.init(&scoreprog, 0, resourceDirectory + "smol_idle.png");
-
+		sprite_w.init(&scoreprog, 0, resourceDirectory + "sprite_walk.png");
 		BillboardFile test = BillboardFile(resourceDirectory + "level2.grl");
 		vector<BillboardData> things = test.getAll();
 		bill.resize(things.size());
@@ -561,6 +561,10 @@ public:
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 
+		if (player.impulse.x > 0)
+			animate = 1;
+		if (player.impulse.x < 0)
+			animate = -1;
 		t++;
 		if (t % 5 == 0) {
 			offset.x += 1 / 3.0f;
@@ -574,6 +578,7 @@ public:
 				offset.x = 0;
 				offset.y = 1 / 3.0f;
 			}
+
 		}
 		glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
 		glUniform1f(scoreprog->getUniform("animate"), 0);
@@ -581,20 +586,26 @@ public:
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
-			//if (bill[ii].z == 0)
-				bill[ii].draw(&scoreprog, depth, 0, 0);
+				bill[ii].draw(&scoreprog, depth, 0, 0, 0);
 		}
-		glUniform1f(scoreprog->getUniform("animate"), 1);
+		glUniform1f(scoreprog->getUniform("animate"), animate);
+		int inc = 1;
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			character temp = it->second;
 			temp.process(ftime);
-			sprite.draw(&scoreprog, depth, temp.pos.x, temp.pos.y);
+			if (temp.impulse.x == 0)
+				sprite.draw(&scoreprog, depth, temp.pos.x, temp.pos.y, 0.01f * inc);
+			else
+				sprite_w.draw(&scoreprog, depth, temp.pos.x, temp.pos.y, 0.01f * inc);
 		}
 
 		player.process(ftime);
 
 
-		sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y);
+		if (player.impulse.x == 0)
+			sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
+		else
+			sprite_w.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
 		scoreprog->unbind();
 
 	}
@@ -680,7 +691,7 @@ int main(int argc, char **argv)
 					others[tempid].impulse = application->game.players[i].impulse;
 				}
 			}
-			application->mycam.pos.y = application->game.camera_pos.y;
+			//application->mycam.pos.y = application->game.camera_pos.y;
 		}
 
 		
