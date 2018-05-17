@@ -596,28 +596,31 @@ public:
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			character temp = it->second;
 			temp.process(ftime);
-			if (temp.impulse.x == 0)
-				sprite.draw(&scoreprog, depth, temp.pos.x, temp.pos.y, 0.01f * inc);
-			else
-				sprite_w.draw(&scoreprog, depth, temp.pos.x, temp.pos.y, 0.01f * inc);
+			display_sprite(temp, depth, 0.01f * inc);
+			inc++;
 		}
 
 		player.process(ftime);
 
 
-		if (player.impulse.x == 0)
-			sprite.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
-		else if(player.impulse.y > 0)
-			sprite_j.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
-		else if (abs(player.impulse.x) <= 6)
-			sprite_w.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
-		else {
-			sprite_r.draw(&scoreprog, depth, player.pos.x, player.pos.y, 0);
-		}
+		
+		display_sprite(player, depth, 0);
 		scoreprog->unbind();
 
 	}
 
+	void display_sprite(character & c, bool depth, float epsilon)
+	{
+		if (c.impulse.y > 0)
+			sprite_j.draw(&scoreprog, depth, c.pos.x, c.pos.y, epsilon);
+		if (c.impulse.x == 0)
+			sprite.draw(&scoreprog, depth, c.pos.x, c.pos.y, epsilon);
+		else if (abs(c.impulse.x) <= 6)
+			sprite_w.draw(&scoreprog, depth, c.pos.x, c.pos.y, epsilon);
+		else {
+			sprite_r.draw(&scoreprog, depth, c.pos.x, c.pos.y, epsilon);
+		}
+	}
 	bool inSquare(vec2 p, float minX, float maxX, float minY, float maxY)
 	{
 		return p.x > minX && p.x < maxX && p.y > minY && p.y < maxY;
