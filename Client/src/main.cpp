@@ -306,6 +306,11 @@ public:
 	GLuint Texture;
 	GLuint Texture2,Texture3,Texture4,Texture5,TextureExplosion;
 
+	// Relevant game data
+	gameData game;
+	bool hostStarting;
+	int id;
+
 	int t = 0;
 	vec2 offset = vec2(0, 0);
 
@@ -408,7 +413,10 @@ public:
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
-		
+
+		srand(time(NULL));
+		id = rand() + 1;
+		hostStarting = false;
 	}
 
 	void initGeom(const std::string& resourceDirectory) 
@@ -472,51 +480,56 @@ public:
 		}
 
 		double ftime = get_last_elapsed_time();
+
 		if (gamepad->IsConnected())
 		{
+			if (game.active) {
+				if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
+				{
+					if (!player.jumping && player.impulse.y == 0.0) {
+						player.jumping = true;
+						player.start_jump();
+						player.impulse.y = 10.0;
+					}
+					else if (player.jumping && !player.end_jump()) {
+						player.impulse.y = min(player.impulse.y + 1.5, 12.5);
+					}
+				}
+				else if (player.impulse.y == 0.0) {
+					player.jumping = false;
+				}
+
+
+				SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
+				SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
+
+				if (lx > 3000 || lx < (-3000))
+				{
+					double max_speed = 6.0;
+					if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_X) {
+						max_speed = 10.0;
+					}
+					player.moving = true;
+					float nx = (float)lx / 32000.0;
+					if (nx > 0) {
+						player.impulse.x = min(player.impulse.x + 0.5 * nx, max_speed);
+					}
+					else {
+						player.impulse.x = max(player.impulse.x + 0.5 * nx, -max_speed);
+					}
+
+				}
+				else
+					player.moving = false;
+			}
+			else if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A && 
+				     game.host.id == id) {
+				hostStarting = true;
+			}
 			
-			if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
-			{
-				if (!player.jumping && player.impulse.y == 0.0) {
-					player.jumping = true;
-					player.start_jump();
-					player.impulse.y = 10.0;
-				}
-				else if (player.jumping && !player.end_jump()) {
-					player.impulse.y = min(player.impulse.y + 1.5, 12.5);
-				}
-			}
-			else if (player.impulse.y == 0.0) {
-				player.jumping = false;
-			}
-
-
-			SHORT lx = gamepad->GetState().Gamepad.sThumbLX;
-			SHORT ly = gamepad->GetState().Gamepad.sThumbLY;
-
-			if (lx > 3000 || lx < (-3000))
-			{
-				double max_speed = 6.0;
-				if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_X) {
-					max_speed = 10.0;
-				}
-				player.moving = true;
-				float nx = (float)lx / 32000.0;
-				if (nx > 0) {
-					player.impulse.x = min(player.impulse.x + 0.5 * nx, max_speed);
-				}
-				else {
-					player.impulse.x = max(player.impulse.x + 0.5 * nx, -max_speed);
-				}
-
-			}
-			else
-				player.moving = false;
 
 		}
 
-		// TESTING FOR UPSCROLLING LEVEL
-		//mycam.pos.y -= 2 * ftime;
 
 		// Get current frame buffer size.
 		int width, height;
@@ -627,13 +640,9 @@ int main(int argc, char **argv)
 	/*start_client("129.65.221.104", 27015);*/
 	start_client("127.0.0.1", 27015);
 
-	gameData game;
-
 	client_data_packet_ cp;
 	server_data_packet_ incoming;
-	srand(time(NULL));
-	int id = rand() + 1;
-	cp.dataint[0] = id;
+	cp.dataint[0] = application->id;
 
 	long double last_send = sw.elapse_milli();
 
@@ -649,6 +658,10 @@ int main(int argc, char **argv)
 			cp.datafloat[1] = player.pos.y;
 			cp.datafloat[2] = player.impulse.x;
 			cp.datafloat[3] = player.impulse.y;
+			if (application->hostStarting) {
+				cp.dataint[1] = 1;
+			}
+
 			set_outgoing_data_packet(cp);
 
 			last_send = sw.elapse_milli();
@@ -656,18 +669,18 @@ int main(int argc, char **argv)
 			get_incomming_data_packet(incoming);
 			others.clear();
 
-			getFromServerPacket(&game, &incoming);
+			getFromServerPacket(&application->game, &incoming);
 
 			for (int i = 0; i < MAX_PLAYERS; i++) {
-				if (game.players[i].id != 0) {
-					int tempid = game.players[i].id;
-					if (tempid == id)
+				if (application->game.players[i].id != 0) {
+					int tempid = application->game.players[i].id;
+					if (tempid == application->id)
 						continue;
-					others[tempid].pos = game.players[i].position;
-					others[tempid].impulse = game.players[i].impulse;
+					others[tempid].pos = application->game.players[i].position;
+					others[tempid].impulse = application->game.players[i].impulse;
 				}
 			}
-			application->mycam.pos.y = game.camera_pos.y;
+			application->mycam.pos.y = application->game.camera_pos.y;
 		}
 
 		

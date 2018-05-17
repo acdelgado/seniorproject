@@ -25,7 +25,8 @@ public:
 
 class gameData {
 public:
-	int level;
+	short level;
+	bool active;
 	int numPlayers;
 	glm::vec3 camera_pos;
 	glm::vec3 camera_rot;
@@ -34,6 +35,7 @@ public:
 
 	gameData() {
 		level = 1;
+		active = false;
 		numPlayers = 0;
 		camera_pos = glm::vec3(0, 0, 0);
 		camera_rot = glm::vec3(0, 0, 0);
@@ -71,6 +73,9 @@ void copyClientsToGameData(gameData *gd, client_data_packet_ *dp) {
 			}
 			else if (dp[i].dataint[0] == gd->host.id) {
 				hostStillActive = true;
+				if (dp[i].dataint[1] == 1) {
+					gd->active = true;
+				}
 			}
 			active++;
 		}
