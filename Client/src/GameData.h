@@ -15,11 +15,13 @@ public:
 	int id;
 	glm::vec2 position;
 	glm::vec2 impulse;
+	bool isDead;
 
 	gamePlayer() {
 		id = 0;
 		position = glm::vec2(0, 0);
 		impulse = glm::vec2(0, 0);
+		isDead = FALSE;
 	};
 };
 

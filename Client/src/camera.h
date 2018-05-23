@@ -45,7 +45,7 @@ public:
 		rpos = R * rpos;
 		pos.x += -rpos.x;
 		pos.z += rpos.z;
-		pos.y -= 0.01;
+		//pos.y -= 0.01;
 
 		glm::mat4 T = glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
 		return R * T;

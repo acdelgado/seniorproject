@@ -163,9 +163,14 @@ class server_
 
 			if (ClientSocket != INVALID_SOCKET) {
 				//save client socket into our struct table
-				clients[number_of_clients].ss = ClientSocket;
-				clients[number_of_clients].connected = TRUE;
-				clients[number_of_clients].address = server;
+				int open_spot = 0;
+				
+				while (clients[open_spot].connected)
+					open_spot++;
+
+				clients[open_spot].ss = ClientSocket;
+				clients[open_spot].connected = TRUE;
+				clients[open_spot].address = server;
 				//and of course we need a calculator too
 				number_of_clients++;
 
@@ -251,10 +256,7 @@ class server_
 			sw.start();
 			while (running)
 				{
-				//cout << "Client " << clients[ii].ss << " still connected" << endl;
-				//cout << clientnum<<"    before recv: "<<sw.elapse_micro() << endl;
 				int res = receive_data(clients[clientnum].ss, temp.get_address(), temp.get_size());
-				//cout << clientnum << "  after recv: " << sw.elapse_micro() << "   res:   " << res<< endl;
 				if (res <= 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 					{
 					connection_error = TRUE;

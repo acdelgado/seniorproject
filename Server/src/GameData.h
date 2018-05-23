@@ -15,11 +15,13 @@ public:
 	int id;
 	glm::vec2 position;
 	glm::vec2 impulse;
+	bool isDead;
 
 	gamePlayer() {
 		id = 0;
 		position = glm::vec2(0, 0);
 		impulse = glm::vec2(0, 0);
+		isDead = FALSE;
 	};
 };
 
@@ -67,7 +69,7 @@ void copyClientsToGameData(gameData *gd, client_data_packet_ *dp) {
 			gd->players[active].impulse = glm::vec2(dp[i].datafloat[2], dp[i].datafloat[3]);
 
 			if (!gd->host.id) {
-				gd->host = gd->players[active];
+				gd->host = gd->players[0];
 				hostStillActive = true;
 				cout << gd->host.id << " is new host." << endl;
 			}

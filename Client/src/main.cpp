@@ -61,10 +61,15 @@ public:
 	long double jump_start;
 	bool moving;
 	bool jumping;
+	bool isDead;
+
 	character()
 	{
 		pos = vec2(-10, 0);
 		impulse = vec2(0, 0);
+		isDead = FALSE;
+		moving = FALSE;
+		jumping = FALSE;
 		timer.start();
 	}
 	void process(float ftime)
@@ -85,7 +90,6 @@ public:
 			this->reset();
 		}
 		
-
 	}
 
 	void start_jump()
@@ -105,6 +109,14 @@ public:
 		pos.y = 1;
 		impulse.x = 0;
 		impulse.y = 0;
+		isDead = FALSE;
+	}
+	
+	void dead()
+	{
+		impulse.x = 0;
+		impulse.y = 12;
+		isDead = TRUE;
 	}
 };
 
@@ -444,7 +456,7 @@ public:
 		{
 
 			/*player.pos = collide(player.pos, bill.data);*/
-			if (sprite.z == bill[ii].z) {
+			if (!player.isDead && sprite.z == bill[ii].z) {
 				float minX = bill[ii].data[0];
 				float maxX = bill[ii].data[4];
 				float minY = bill[ii].data[1];
@@ -467,7 +479,7 @@ public:
 					player.pos.y = maxY + 0.8;
 					player.impulse.y = 0;
 					if (bill[ii].name == "upspike") {
-						player.reset();
+						player.dead();
 					}
 				}
 
@@ -476,7 +488,7 @@ public:
 					player.pos.y = minY - 1;
 					player.impulse.y = -1;
 					if (bill[ii].name == "downspike") {
-						player.reset();
+						player.dead();
 					}
 				}
 			}
@@ -486,7 +498,7 @@ public:
 
 		if (gamepad->IsConnected())
 		{
-			if (game.active) {
+			if (game.active && !player.isDead) {
 				if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A)
 				{
 					if (!player.jumping && player.impulse.y == 0.0) {
@@ -589,7 +601,7 @@ public:
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
-				bill[ii].draw(&scoreprog, depth, 0, 0, 0);
+			bill[ii].draw(&scoreprog, depth, 0, 0, 0);
 		}
 		glUniform1f(scoreprog->getUniform("animate"), animate);
 		int inc = 1;
@@ -604,7 +616,10 @@ public:
 
 
 		
-		display_sprite(player, depth, 0);
+		if (player.isDead)
+			display_sprite(player, depth, -0.5);
+		else
+			display_sprite(player, depth, 0);
 		scoreprog->unbind();
 
 	}
@@ -628,8 +643,7 @@ public:
 
 };
 //*********************************************************************************************************
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	StopWatchMicro_ sw;
 	sw.start();
 
