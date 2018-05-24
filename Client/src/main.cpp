@@ -367,6 +367,22 @@ public:
 		{
 			mycam.d = 0;
 		}
+		if (key == GLFW_KEY_E && action == GLFW_PRESS)
+		{
+			mycam.e = 1;
+		}
+		if (key == GLFW_KEY_E && action == GLFW_RELEASE)
+		{
+			mycam.e = 0;
+		}
+		if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+		{
+			mycam.q = 1;
+		}
+		if (key == GLFW_KEY_Q && action == GLFW_RELEASE)
+		{
+			mycam.q = 0;
+		}
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -688,7 +704,6 @@ int main(int argc, char **argv) {
 		// Render scene.
 		application->render();
 
-		/*if (player.impulse.x != 0 || player.impulse.y > 0 || player.impulse.y < -0.30) {*/
 		if (sw.elapse_milli() > last_send + 5) {
 			cp.datafloat[0] = player.pos.x;
 			cp.datafloat[1] = player.pos.y;
@@ -716,12 +731,9 @@ int main(int argc, char **argv) {
 					others[tempid].impulse = application->game.players[i].impulse;
 				}
 			}
+
 			//application->mycam.pos.y = application->game.camera_pos.y;
 		}
-
-		
-			/*cout << "sending position" << endl;
-		}*/
 
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
