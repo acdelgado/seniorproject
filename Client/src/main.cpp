@@ -58,6 +58,7 @@ private:
 public:
 	vec2 pos, impulse;
 	int lifes;
+	int animate;
 	long double jump_start;
 	bool moving;
 	bool jumping;
@@ -70,6 +71,7 @@ public:
 		isDead = FALSE;
 		moving = FALSE;
 		jumping = FALSE;
+		animate = 1;
 		timer.start();
 	}
 	void process(float ftime)
@@ -89,6 +91,12 @@ public:
 		{
 			this->reset();
 		}
+
+		//animate
+		if (impulse.x < 0)
+			animate = -1;
+		if (impulse.x > 0)
+			animate = 1;
 		
 	}
 
@@ -137,11 +145,15 @@ public:
 
 	float z;
 	float frame;
+	float drawY;
+	bool falling;
 	
 	void init(BillboardData *bbd, string resourceDir)
 	{
 		name = bbd->name;
 		z = bbd->points[0][2];
+		falling = false;
+		drawY = 0;
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -218,10 +230,11 @@ public:
 	{
 		prog = program;
 		z = zposition;
-
+		falling = false;
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
+		drawY = 0;
 
 		//generate vertex buffer to hand off to OGL
 		glGenBuffers(1, &VBO);
@@ -295,6 +308,21 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glEnable(GL_DEPTH_TEST);
 	}
+
+	void updatePos()
+	{
+		if(falling)
+		{
+			drawY -= 0.05;
+			int verc = 0;
+			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= 0.05;
+		}
+	}
 };
 
 vector<Billboard> bill;
@@ -324,7 +352,7 @@ public:
 	bool hostStarting;
 	int id;
 
-	int t = 0, animate = 1;
+	int t = 0;
 	vec2 offset = vec2(0, 0);
 
 	CXBOXController *gamepad = new CXBOXController(1); //1 would be the only one or the fist one of max 4 controller
@@ -470,8 +498,8 @@ public:
 
 		for (int ii = 0; ii < bill.size(); ii++)
 		{
+			bill[ii].updatePos();
 
-			/*player.pos = collide(player.pos, bill.data);*/
 			if (!player.isDead && sprite.z == bill[ii].z) {
 				float minX = bill[ii].data[0];
 				float maxX = bill[ii].data[4];
@@ -497,13 +525,17 @@ public:
 					if (bill[ii].name == "upspike") {
 						player.dead();
 					}
+					if (bill[ii].name == "rock")
+					{
+						bill[ii].falling = "true";
+					}
 				}
 
 				if (inSquare(vec2(player.pos.x, player.pos.y + 1), minX, maxX, minY, maxY))
 				{
 					player.pos.y = minY - 1;
 					player.impulse.y = -1;
-					if (bill[ii].name == "downspike") {
+					if (bill[ii].name == "downspike" || (bill[ii].name == "rock" && bill[ii].falling)) {
 						player.dead();
 					}
 				}
@@ -592,10 +624,6 @@ public:
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 
-		if (player.impulse.x > 0)
-			animate = 1;
-		if (player.impulse.x < 0)
-			animate = -1;
 		t++;
 		if (t % 5 == 0) {
 			offset.x += 1 / 3.0f;
@@ -617,20 +645,21 @@ public:
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
-			bill[ii].draw(&scoreprog, depth, 0, 0, 0);
+			bill[ii].draw(&scoreprog, depth, 0, bill[ii].drawY, 0);
 		}
-		glUniform1f(scoreprog->getUniform("animate"), animate);
+		
 		int inc = 1;
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			character temp = it->second;
 			temp.process(ftime);
+			glUniform1f(scoreprog->getUniform("animate"), temp.animate);
 			display_sprite(temp, depth, 0.01f * inc);
 			inc++;
 		}
 
 		player.process(ftime);
 
-
+		glUniform1f(scoreprog->getUniform("animate"), player.animate);
 		
 		if (player.isDead)
 			display_sprite(player, depth, -0.5);
