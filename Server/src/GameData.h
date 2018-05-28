@@ -33,14 +33,14 @@ public:
 	GLfloat data[12];
 	float impulseY;
 	float diffY;
+	float drawY;
 	bool isFalling;
 	string texture;
 
 	fallingObject() {
 		id = 0;
 		isFalling = false;
-		impulseY = 0;
-		diffY = 0;
+		impulseY = diffY = drawY = 0;
 	}
 
 	void readBillboardData(BillboardData bbd) {
@@ -55,6 +55,15 @@ public:
 		data[verc++] = bbd.points[5][0], data[verc++] = bbd.points[5][1];
 
 		id = bbd.id;
+	}
+
+	void updatePosition(float impulseDiff) {
+		impulseY += impulseDiff;
+		diffY += impulseY;
+		drawY += diffY;
+		int verc = 0;
+		for (int i = 0; i < 6; i++)
+			data[i * 2 + 1] -= diffY;
 	}
 };
 

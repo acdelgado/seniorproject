@@ -149,6 +149,7 @@ public:
 	float z;
 	float frame;
 	float drawY;
+	float diffY;
 	bool falling;
 	bool triggered;
 	float impulseY;
@@ -161,6 +162,7 @@ public:
 		triggered = false;
 		falling = false;
 		drawY = 0;
+		diffY = 0;
 		impulseY = 0;
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
@@ -323,15 +325,12 @@ public:
 	{
 		if(falling)
 		{
-			impulseY += GRAVITY * ftime / 6;
-			drawY -= impulseY * 0.05;
+			impulseY += GRAVITY * ftime / 10000;
+			diffY += impulseY;
+			drawY += diffY;
 			int verc = 0;
-			data[verc++] += 0, data[verc++] -= drawY;
-			data[verc++] += 0, data[verc++] -= drawY;
-			data[verc++] += 0, data[verc++] -= drawY;
-			data[verc++] += 0, data[verc++] -= drawY;
-			data[verc++] += 0, data[verc++] -= drawY;
-			data[verc++] += 0, data[verc++] -= drawY;
+			for (int i = 0; i < 6; i++)
+				data[i * 2 + 1] -= diffY;
 		}
 	}
 };
@@ -511,8 +510,8 @@ public:
 		for (int ii = 0; ii < bill.size(); ii++)
 		{
 			bill[ii].updatePos(ftime);
-			if (bill[ii].name == "rock") {
-
+			if (bill[ii].name == "rock" && bill[ii].falling) {
+				int i = 0;
 			}
 
 			if (!player.isDead && sprite.z == bill[ii].z) {
@@ -658,7 +657,7 @@ public:
 		
 
 		for (int ii = 0; ii < bill.size(); ii++) {
-			bill[ii].draw(&scoreprog, depth, 0, bill[ii].drawY, 0);
+			bill[ii].draw(&scoreprog, depth, 0, -bill[ii].drawY, 0);
 		}
 		
 		int inc = 1;
@@ -788,9 +787,10 @@ int main(int argc, char **argv) {
 					for (int j = 0; j < bill.size(); j++) {
 						if (temp.id == bill[j].id) {
 							bill[j].falling = true;
-							bill[j].data = temp.data;
+							std::memcpy(bill[j].data, temp.data, sizeof(GLfloat) * 12);
 							bill[j].impulseY = temp.impulseY;
-							bill[j].drawY = temp.diffY;
+							bill[j].diffY = temp.diffY;
+							bill[j].drawY = temp.drawY;
 						}
 					}
 				}

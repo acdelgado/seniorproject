@@ -646,7 +646,7 @@ int main(int argc, char **argv)
 	StopWatchMicro_ sw;
 	sw.start();
 	long double last = sw.elapse_milli();
-	int diff = 15;
+	float diff = 15.0;
 
 
 	while (true) {
@@ -655,17 +655,8 @@ int main(int argc, char **argv)
 			gd.camera_pos.y -= 0.01;
 
 			for (int i = 0; i < MAX_OBJECTS; i++) {
-				fallingObject *temp = &gd.objects[i];
-				if (temp->isFalling) {
-					temp->impulseY += GRAVITY * diff / (6 * 1000);
-					temp->diffY -= temp->impulseY * 0.05;
-					int verc = 0;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
-					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+				if (gd.objects[i].isFalling) {
+					gd.objects[i].updatePosition(GRAVITY * (diff / 1000) / 10000);
 				}
 			}
 		}
