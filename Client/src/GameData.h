@@ -3,8 +3,10 @@
 #ifndef GAME_DATA
 #define GAME_DATA
 
-#define MAX_PLAYERS 50
+#define MAX_PLAYERS 30
+#define MAX_OBJECTS 5
 
+#include "BillboardFile.h"
 #include "glm/glm.hpp"
 #include "data_packet.h"
 
@@ -25,6 +27,35 @@ public:
 	};
 };
 
+class fallingObject {
+public:
+	int id;
+	GLfloat data[12];
+	float impulseY;
+	float diffY;
+	bool isFalling;
+	string texture;
+
+	fallingObject() {
+		id = 0;
+		isFalling = false;
+		impulseY = 0;
+		diffY = 0;
+	}
+
+	void readBillboardData(BillboardData bbd) {
+		texture = bbd.texture;
+
+		int verc = 0;
+		data[verc++] = bbd.points[0][0], data[verc++] = bbd.points[0][1];
+		data[verc++] = bbd.points[1][0], data[verc++] = bbd.points[1][1];
+		data[verc++] = bbd.points[2][0], data[verc++] = bbd.points[2][1];
+		data[verc++] = bbd.points[3][0], data[verc++] = bbd.points[3][1];
+		data[verc++] = bbd.points[4][0], data[verc++] = bbd.points[4][1];
+		data[verc++] = bbd.points[5][0], data[verc++] = bbd.points[5][1];
+	}
+};
+
 class gameData {
 public:
 	short level;
@@ -34,13 +65,13 @@ public:
 	glm::vec3 camera_rot;
 	gamePlayer host;
 	gamePlayer players[MAX_PLAYERS];
+	fallingObject objects[MAX_OBJECTS];
 
 	gameData() {
-		level = 1;
+		level = 2;
 		active = false;
 		numPlayers = 0;
 		camera_pos = glm::vec3(0, 0, 0);
-		camera_rot = glm::vec3(0, 0, 0);
 		host = gamePlayer();
 	}
 
@@ -69,14 +100,26 @@ void copyClientsToGameData(gameData *gd, client_data_packet_ *dp) {
 			gd->players[active].impulse = glm::vec2(dp[i].datafloat[2], dp[i].datafloat[3]);
 
 			if (!gd->host.id) {
-				gd->host = gd->players[active];
+				gd->host = gd->players[0];
 				hostStillActive = true;
 				cout << gd->host.id << " is new host." << endl;
 			}
 			else if (dp[i].dataint[0] == gd->host.id) {
 				hostStillActive = true;
+				if (dp[i].dataint[1] == 1) {
+					gd->active = true;
+				}
 			}
 			active++;
+
+			for (int j = 0; j < MAX_OBJECTS; j++) {
+				if (dp[i].dataint[j + 2] != 0) {
+					for (int k = 0; k < MAX_OBJECTS; k++) {
+						if (gd->objects[k].id == dp[i].dataint[j + 1])
+							gd->objects[k].isFalling = true;
+					}
+				}
+			}
 		}
 	}
 

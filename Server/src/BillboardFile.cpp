@@ -18,6 +18,7 @@ BillboardFile::BillboardFile(string filename) {
 
 BillboardData BillboardFile::getData(ifstream &input, string line) {
 	string name = "none";
+	short id = -1;
 	string texture;
 	vector<string> tokens;
 	long vertexCount, parsedVecs = 0;
@@ -33,8 +34,8 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 			if (tokens[1] == "name:" && tokens.size() > 2) {
 				name = tokens[2];
 			}
-			else if (tokens[1] == "properties:") {
-				;
+			else if (tokens[1] == "id:" && tokens.size() > 2) {
+				id = std::stoi(tokens[2], nullptr);
 			}
 			else if (tokens[1] == "vertexcount:") {
 				vertexCount = std::stol(tokens[2], nullptr);
@@ -46,6 +47,9 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 				for (int i = 3; i < tokens.size(); i++) {
 					texture += " " + tokens[i];
 				}
+			}
+			else {
+				;
 			}
 		}
 		else {
@@ -62,7 +66,7 @@ BillboardData BillboardFile::getData(ifstream &input, string line) {
 		getline(input, line);
 	}
 
-	return BillboardData(name, texture, points, texcoords, vertexCount);
+	return BillboardData(name, texture, points, texcoords, vertexCount, id);
 }
 
 vector<BillboardData> BillboardFile::getAll() {

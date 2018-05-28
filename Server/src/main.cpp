@@ -35,8 +35,11 @@
 #include "GameData.h"
 #include "Stopwatch.h"
 
+#define GRAVITY 30.0
+
 using namespace std;
 using namespace glm;
+
 double get_last_elapsed_time()
 {
 	static double lasttime = glfwGetTime();
@@ -45,6 +48,7 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
+
 class character
 {
 public:
@@ -602,7 +606,7 @@ public:
 int main(int argc, char **argv)
 {
 	// Where the resources are loaded from
-	std::string resourceDir = "../resources/";
+	std::string resourceDir = "../../Client/resources/";
 
 	if (argc >= 2)
 	{
@@ -610,25 +614,22 @@ int main(int argc, char **argv)
 	}
 
 
-	Application *application = new Application();
-
-	// Your main will always include a similar set up to establish your window
-	// and GL context, etc.
-
-	
-	
-	//WindowManager *windowManager = new WindowManager();
-	//windowManager->init(1920, 1080);
-	//windowManager->setEventCallbacks(application);
-	//application->windowManager = windowManager;
-
-	// This is the code that will likely change program to program as you
-	// may need to initialize or set up different data and state
-
-	//application->init(resourceDir);
-	//application->initGeom(resourceDir);
+	//Application *application = new Application();
 
 	start_server(27015);
+
+	BillboardFile test = BillboardFile(resourceDir + "level2.grl");
+	vector<BillboardData> things = test.getAll();
+	vector<fallingObject> falling = vector<fallingObject>(0);
+
+	for (int i = 0; i < things.size(); i++) {
+		if (things[i].name == "rock") {
+			fallingObject f = fallingObject();
+			f.readBillboardData(things[i]);
+			falling.push_back(f);
+		}
+	}
+
 
 	client_data_packet_ *allData;
 	server_data_packet_ outgoing;
@@ -636,7 +637,11 @@ int main(int argc, char **argv)
 	get_all_incoming_data(&allData);
 
 	gameData gd;
-	gd.level = 1;
+	gd.level = 2;
+
+	for (int i = 0; i < falling.size(); i++) {
+		gd.objects[i] = falling[i];
+	}
 
 	StopWatchMicro_ sw;
 	sw.start();
@@ -648,6 +653,21 @@ int main(int argc, char **argv)
 		if (gd.active && sw.elapse_milli() > last + diff) {
 			last = sw.elapse_milli();
 			gd.camera_pos.y -= 0.01;
+
+			for (int i = 0; i < MAX_OBJECTS; i++) {
+				fallingObject *temp = &gd.objects[i];
+				if (temp->isFalling) {
+					temp->impulseY += GRAVITY * diff / (6 * 1000);
+					temp->diffY -= temp->impulseY * 0.05;
+					int verc = 0;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+					temp->data[verc++] += 0, temp->data[verc++] -= temp->diffY;
+				}
+			}
 		}
 
 

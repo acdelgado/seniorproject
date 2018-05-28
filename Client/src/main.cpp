@@ -38,6 +38,9 @@
 #include "Stopwatch.h"
 #include "GameData.h"
 
+
+#define GRAVITY 30
+
 using namespace std;
 using namespace glm;
 
@@ -86,7 +89,7 @@ public:
 		}
 
 		pos += impulse * ftime;
-		impulse.y -= 30 * ftime;
+		impulse.y -= GRAVITY * ftime;
 		if (pos.y < -20) //death fall y-value
 		{
 			this->reset();
@@ -147,13 +150,18 @@ public:
 	float frame;
 	float drawY;
 	bool falling;
+	bool triggered;
+	float impulseY;
+	short id;
 	
 	void init(BillboardData *bbd, string resourceDir)
 	{
 		name = bbd->name;
 		z = bbd->points[0][2];
+		triggered = false;
 		falling = false;
 		drawY = 0;
+		impulseY = 0;
 		//generate the VAO
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -178,6 +186,8 @@ public:
 		//key function to get up how many elements to pull out at a time (3)
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+		//set id
+		id = bbd->id;
 
 		//generate vertex buffer to hand off to OGL
 		glGenBuffers(1, &TexBuffer);
@@ -309,18 +319,19 @@ public:
 		glEnable(GL_DEPTH_TEST);
 	}
 
-	void updatePos()
+	void updatePos(double ftime)
 	{
 		if(falling)
 		{
-			drawY -= 0.05;
+			impulseY += GRAVITY * ftime / 6;
+			drawY -= impulseY * 0.05;
 			int verc = 0;
-			data[verc++] += 0, data[verc++] -= 0.05;
-			data[verc++] += 0, data[verc++] -= 0.05;
-			data[verc++] += 0, data[verc++] -= 0.05;
-			data[verc++] += 0, data[verc++] -= 0.05;
-			data[verc++] += 0, data[verc++] -= 0.05;
-			data[verc++] += 0, data[verc++] -= 0.05;
+			data[verc++] += 0, data[verc++] -= drawY;
+			data[verc++] += 0, data[verc++] -= drawY;
+			data[verc++] += 0, data[verc++] -= drawY;
+			data[verc++] += 0, data[verc++] -= drawY;
+			data[verc++] += 0, data[verc++] -= drawY;
+			data[verc++] += 0, data[verc++] -= drawY;
 		}
 	}
 };
@@ -494,11 +505,15 @@ public:
 	}
 	void render()
 	{
-		
+
+		double ftime = get_last_elapsed_time();
 
 		for (int ii = 0; ii < bill.size(); ii++)
 		{
-			bill[ii].updatePos();
+			bill[ii].updatePos(ftime);
+			if (bill[ii].name == "rock") {
+
+			}
 
 			if (!player.isDead && sprite.z == bill[ii].z) {
 				float minX = bill[ii].data[0];
@@ -527,7 +542,7 @@ public:
 					}
 					if (bill[ii].name == "rock")
 					{
-						bill[ii].falling = "true";
+						bill[ii].triggered = true;
 					}
 				}
 
@@ -541,8 +556,6 @@ public:
 				}
 			}
 		}
-
-		double ftime = get_last_elapsed_time();
 
 		if (gamepad->IsConnected())
 		{
@@ -738,8 +751,16 @@ int main(int argc, char **argv) {
 			cp.datafloat[1] = player.pos.y;
 			cp.datafloat[2] = player.impulse.x;
 			cp.datafloat[3] = player.impulse.y;
+
 			if (application->hostStarting) {
 				cp.dataint[1] = 1;
+			}
+
+			int rockIndex = 2;
+			for (int i = 0; i < bill.size(); i++) {
+				if (bill[i].triggered) {
+					cp.dataint[rockIndex++] = bill[i].id;
+				}
 			}
 
 			set_outgoing_data_packet(cp);
@@ -758,6 +779,20 @@ int main(int argc, char **argv) {
 						continue;
 					others[tempid].pos = application->game.players[i].position;
 					others[tempid].impulse = application->game.players[i].impulse;
+				}
+			}
+
+			for (int i = 0; i < MAX_OBJECTS; i++) {
+				fallingObject temp = application->game.objects[i];
+				if (temp.isFalling) {
+					for (int j = 0; j < bill.size(); j++) {
+						if (temp.id == bill[j].id) {
+							bill[j].falling = true;
+							bill[j].data = temp.data;
+							bill[j].impulseY = temp.impulseY;
+							bill[j].drawY = temp.diffY;
+						}
+					}
 				}
 			}
 

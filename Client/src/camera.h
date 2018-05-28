@@ -1,8 +1,8 @@
 #pragma once
 
 
-#ifndef LAB471_CAMERA_H_INCLUDED
-#define LAB471_CAMERA_H_INCLUDED
+#ifndef CAMERA
+#define CAMERA
 
 #include <stack>
 #include <memory>
@@ -51,7 +51,6 @@ public:
 		pos.x += -rpos.x;
 		pos.y += rpos.y;
 		pos.z += rpos.z;
-		//pos.y -= 0.01;
 
 		glm::mat4 T = glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
 		return R * T;
@@ -62,12 +61,5 @@ public:
 		return R;
 	}
 };
-
-
-
-
-
-
-
 
 #endif // LAB471_CAMERA_H_INCLUDED

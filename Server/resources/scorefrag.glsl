@@ -6,13 +6,19 @@ in vec2 fragTex;
 
 uniform sampler2D tex;
 uniform vec2 offset;
-
+uniform float animate;
 
 void main()
 {
-	
-	color = texture(tex, fragTex);
+	if(animate == 0)
+		color = texture(tex, fragTex);
+	else if(animate > 0){
+		color = texture(tex, vec2((fragTex.x/3+offset.x),fragTex.y/3+offset.y));
+	}
+	else{
+		color = texture(tex, vec2((fragTex.x/3-offset.x-(1/3.0f))*-1,fragTex.y/3+offset.y));
+	}
 	//color.a= (color.r + color.g + color.b)/3.0;
 	//color=vec4(1,0,0,1);
-	color.a=1;
+	
 }
