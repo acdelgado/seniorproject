@@ -325,7 +325,7 @@ public:
 	{
 		if(falling)
 		{
-			impulseY += GRAVITY * ftime / 10000;
+			impulseY += GRAVITY * ftime / 50000;
 			diffY += impulseY;
 			drawY += diffY;
 			int verc = 0;
@@ -758,6 +758,7 @@ int main(int argc, char **argv) {
 			int rockIndex = 2;
 			for (int i = 0; i < bill.size(); i++) {
 				if (bill[i].triggered) {
+					bill[i].triggered = false;
 					cp.dataint[rockIndex++] = bill[i].id;
 				}
 			}
@@ -796,7 +797,7 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			//application->mycam.pos.y = application->game.camera_pos.y;
+			application->mycam.pos.y = application->game.camera_pos.y;
 		}
 
 		// Swap front and back buffers.

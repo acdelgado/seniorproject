@@ -646,28 +646,30 @@ int main(int argc, char **argv)
 	StopWatchMicro_ sw;
 	sw.start();
 	long double last = sw.elapse_milli();
-	float diff = 15.0;
+	float diff = 5.0;
 
 
 	while (true) {
-		if (gd.active && sw.elapse_milli() > last + diff) {
+		if (sw.elapse_milli() > last + diff) {
+			if (gd.active && gd.camera_pos.y > -66) {
+				gd.camera_pos.y -= 0.005;
+			}
+
 			last = sw.elapse_milli();
-			gd.camera_pos.y -= 0.01;
 
 			for (int i = 0; i < MAX_OBJECTS; i++) {
 				if (gd.objects[i].isFalling) {
-					gd.objects[i].updatePosition(GRAVITY * (diff / 1000) / 10000);
+					gd.objects[i].updatePosition(GRAVITY * (diff / 1000) / 50000);
 				}
 			}
+
+
+			copyClientsToGameData(&gd, allData);
+			copyToServerPacket(&gd, &outgoing);
+
+			set_outgoing_data_packet(outgoing);
+
 		}
-
-
-		
-		copyClientsToGameData(&gd, allData);
-		copyToServerPacket(&gd, &outgoing);
-
-		set_outgoing_data_packet(outgoing);
-
 	}
 
 
