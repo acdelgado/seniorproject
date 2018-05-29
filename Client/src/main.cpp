@@ -664,13 +664,16 @@ public:
 		
 		int inc = 1;
 		glUniform1f(scoreprog->getUniform("diffColor"), 0);
+		glDisable(GL_DEPTH_TEST);
 		for (auto it = others.begin(); it != others.end(); ++it) {
+			int ep = it->first;
 			character temp = it->second;
 			temp.process(ftime);
 			glUniform1f(scoreprog->getUniform("animate"), temp.animate);
-			display_sprite(temp, depth, 0.01f * inc);
+			display_sprite(temp, depth, 0.00001f * ep);
 			inc++;
 		}
+		glEnable(GL_DEPTH_TEST);
 
 		player.process(ftime);
 
