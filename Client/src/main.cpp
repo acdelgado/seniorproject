@@ -477,6 +477,7 @@ public:
 		scoreprog->addUniform("M");
 		scoreprog->addUniform("offset");
 		scoreprog->addUniform("animate");
+		scoreprog->addUniform("diffColor");
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
@@ -653,6 +654,7 @@ public:
 		}
 		glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
 		glUniform1f(scoreprog->getUniform("animate"), 0);
+		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		glActiveTexture(GL_TEXTURE0);
 		
 
@@ -661,6 +663,7 @@ public:
 		}
 		
 		int inc = 1;
+		glUniform1f(scoreprog->getUniform("diffColor"), 0);
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			character temp = it->second;
 			temp.process(ftime);
@@ -672,7 +675,7 @@ public:
 		player.process(ftime);
 
 		glUniform1f(scoreprog->getUniform("animate"), player.animate);
-		
+		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		if (player.isDead)
 			display_sprite(player, depth, -0.5);
 		else
