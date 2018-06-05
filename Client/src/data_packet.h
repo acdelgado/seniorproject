@@ -14,7 +14,7 @@
 #include <mutex>
 //#include "ground.h"
 #define DATA_INT 256
-#define DATA_FLOAT 1024
+#define DATA_FLOAT 2048
 class server_data_packet_
 	{ 
 	private:

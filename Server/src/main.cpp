@@ -560,7 +560,7 @@ public:
 		static float angle = 0;
 		angle += 0.01;
 		static vec3 eCord(0,0,0);
-					
+
 		//VIEW MATRIX
 		V = mycam.process();
 				
@@ -618,7 +618,7 @@ int main(int argc, char **argv)
 
 	start_server(27015);
 
-	BillboardFile test = BillboardFile(resourceDir + "level2.grl");
+	BillboardFile test = BillboardFile(resourceDir + "level3.grl");
 	vector<BillboardData> things = test.getAll();
 	vector<fallingObject> falling = vector<fallingObject>(0);
 
@@ -637,7 +637,7 @@ int main(int argc, char **argv)
 	get_all_incoming_data(&allData);
 
 	gameData gd;
-	gd.level = 2;
+	gd.level = 3;
 
 	for (int i = 0; i < falling.size(); i++) {
 		gd.objects[i] = falling[i];
@@ -651,7 +651,7 @@ int main(int argc, char **argv)
 
 	while (true) {
 		if (sw.elapse_milli() > last + diff) {
-			if (gd.active && gd.camera_pos.y > -66) {
+			if (gd.active && gd.camera_pos.y > -700) {
 				gd.camera_pos.y -= 0.005;
 			}
 
