@@ -76,6 +76,7 @@ public:
 		pos = vec2(-10, 1);
 		impulse = vec2(0, 0);
 		isDead = FALSE;
+		inWater = FALSE;
 		moving = FALSE;
 		jumping = FALSE;
 		animate = 1;
@@ -143,6 +144,8 @@ public:
 		isDead = TRUE;
 		inWater = TRUE;
 	}
+
+	bool isInWater() { return inWater; }
 };
 
 character player;
@@ -744,7 +747,7 @@ public:
 			character temp = it->second;
 			temp.setKillY(-mycam.pos.y-10);
 			temp.process(ftime);
-			if (temp.inWater) {
+			if (temp.isInWater()) {
 				vec2 deadoffset = vec2(0, 0);
 				glUniform2fv(scoreprog->getUniform("offset"), 1, &deadoffset.x);
 				glUniform1f(scoreprog->getUniform("dead"), 1);
@@ -761,7 +764,7 @@ public:
 
 		player.setKillY(-mycam.pos.y-10);
 		player.process(ftime);
-		if (player.inWater) {
+		if (player.isInWater()) {
 			vec2 deadoffset = vec2(0, 0);
 
 			glUniform1f(scoreprog->getUniform("dead"), 1);
@@ -831,7 +834,7 @@ int main(int argc, char **argv) {
 	application->initGeom(resourceDir);
 
 	/*start_client("129.65.221.104", 27015);*/
-	start_client("127.0.0.1", 27015);
+	start_client("129.65.113.228", 27015);
 
 	client_data_packet_ cp;
 	server_data_packet_ incoming;
@@ -899,8 +902,8 @@ int main(int argc, char **argv) {
 					}
 				}
 			}
-			application->game.active = true;
-			//application->mycam.pos.y = application->game.camera_pos.y;
+			//application->game.active = true;
+			application->mycam.pos.y = application->game.camera_pos.y;
 		}
 
 		// Swap front and back buffers.
