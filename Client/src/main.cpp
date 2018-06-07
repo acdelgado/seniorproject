@@ -69,7 +69,7 @@ public:
 
 	character()
 	{
-		pos = vec2(-10, 0);
+		pos = vec2(-10, 1);
 		impulse = vec2(0, 0);
 		isDead = FALSE;
 		moving = FALSE;
@@ -214,7 +214,7 @@ public:
 
 		int width, height, channels;
 		char filepath[1000];
-		cout << bbd->texture.c_str() << endl;
+		//cout << bbd->texture.c_str() << endl;
 		strcpy(filepath, (resourceDir + bbd->texture).c_str());
 		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &Texture);
@@ -448,11 +448,18 @@ public:
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
 	{
 		double posX, posY;
+		int winX, winY;
 
 		if (action == GLFW_PRESS)
 		{
+			// FOR DEBUGGING AND TESTING PURPOSES
 			glfwGetCursorPos(window, &posX, &posY);
+			glfwGetWindowSize(window, &winX, &winY);
 			cout << "Pos X " << posX << " Pos Y " << posY << endl;
+			float relX = posX - (winX / 2);
+			float relY = posY - (winY / 2);
+			player.pos.x = mycam.pos.x + relX / 20;
+			player.pos.y = -mycam.pos.y - relY / 20;
 		}
 	}
 
@@ -518,7 +525,7 @@ public:
 		sprite_w.init(&scoreprog, 0, resourceDirectory + "sprite_walk.png");
 		sprite_r.init(&scoreprog, 0, resourceDirectory + "smol_run.png");
 		sprite_j.init(&scoreprog, 0, resourceDirectory + "smol_jump.png");
-		BillboardFile test = BillboardFile(resourceDirectory + "level2.grl");
+		BillboardFile test = BillboardFile(resourceDirectory + "level3.grl");
 		vector<BillboardData> things = test.getAll();
 		bill.resize(things.size());
 		for (int ii = 0; ii < things.size(); ii++)
@@ -547,13 +554,19 @@ public:
 
 				if (inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
 				{
-					player.impulse.x = 2;
+					//if (player.impulse.x < -6)
+					//	player.impulse.x = -player.impulse.x / 3;
+					//else
+						player.impulse.x = 0;
 					player.pos.x = maxX + 1;
 				}
 
 				if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
 				{
-					player.impulse.x = -2;
+					//if (player.impulse.x > 6)
+					//	player.impulse.x = -player.impulse.x / 3;
+					//else
+						player.impulse.x = 0;
 					player.pos.x = minX - 1;
 				}
 
@@ -797,6 +810,9 @@ int main(int argc, char **argv) {
 				cp.dataint[1] = 1;
 			}
 
+			for (int i = 0; i < bill.size(); i++)
+				cp.dataint[2 + i] = 0;
+
 			int rockIndex = 2;
 			for (int i = 0; i < bill.size(); i++) {
 				if (bill[i].triggered) {
@@ -826,20 +842,20 @@ int main(int argc, char **argv) {
 
 			for (int i = 0; i < MAX_OBJECTS; i++) {
 				fallingObject temp = application->game.objects[i];
-				if (temp.isFalling) {
-					for (int j = 0; j < bill.size(); j++) {
-						if (temp.id == bill[j].id) {
-							bill[j].falling = true;
-							std::memcpy(bill[j].data, temp.data, sizeof(GLfloat) * 12);
-							bill[j].impulseY = temp.impulseY;
-							bill[j].diffY = temp.diffY;
-							bill[j].drawY = temp.drawY;
-						}
+				for (int j = 0; j < bill.size(); j++) {
+					if (temp.id == bill[j].id) {
+						bill[j].falling = temp.isFalling;
+						for (int verc = 0; verc < 6; verc++)
+							bill[j].data[verc * 2 + 1] = temp.data[verc * 2 + 1] - temp.totDiff;
+						//std::memcpy(bill[j].data, temp.data, sizeof(GLfloat) * 12);
+						bill[j].impulseY = temp.impulseY;
+						bill[j].diffY = temp.diffY;
+						bill[j].drawY = temp.drawY;
 					}
 				}
 			}
-
-			application->mycam.pos.y = application->game.camera_pos.y;
+			application->game.active = true;
+			//application->mycam.pos.y = application->game.camera_pos.y;
 		}
 
 		// Swap front and back buffers.
