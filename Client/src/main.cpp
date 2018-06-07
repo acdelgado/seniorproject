@@ -1,10 +1,9 @@
 /* Lab 6 base code - transforms using local matrix functions
-	to be written by students -
-	based on lab 5 by CPE 471 Cal Poly Z. Wood + S. Sueda
-	& Ian Dunn, Christian Eckhardt
-
-	Modified heavily by Anthony Delgado for the
-	implementation of a 3D version of the 1979 arcade classic, "Asteroids"
+to be written by students -
+based on lab 5 by CPE 471 Cal Poly Z. Wood + S. Sueda
+& Ian Dunn, Christian Eckhardt
+Modified heavily by Anthony Delgado for the
+implementation of a 3D version of the 1979 arcade classic, "Asteroids"
 */
 #include <iostream>
 #include <cstdlib>
@@ -39,7 +38,7 @@
 #include "GameData.h"
 
 
-#define GRAVITY 30
+#define GRAVITY 35
 
 using namespace std;
 using namespace glm;
@@ -100,7 +99,7 @@ public:
 			animate = -1;
 		if (impulse.x > 0)
 			animate = 1;
-		
+
 	}
 
 	void start_jump()
@@ -122,7 +121,7 @@ public:
 		impulse.y = 0;
 		isDead = FALSE;
 	}
-	
+
 	void dead()
 	{
 		impulse.x = 0;
@@ -139,7 +138,7 @@ public:
 	string name;
 	GLuint VAO;
 	GLuint VBO, TexBuffer;
-	GLuint Texture;
+	GLuint Texture, Texture2;
 	shared_ptr<Program> *prog;
 	GLfloat *data;
 
@@ -154,7 +153,7 @@ public:
 	bool triggered;
 	float impulseY;
 	short id;
-	
+
 	void init(BillboardData *bbd, string resourceDir)
 	{
 		name = bbd->name;
@@ -230,7 +229,7 @@ public:
 
 	}
 
-	void bindToProg(shared_ptr<Program> *program) 
+	void bindToProg(shared_ptr<Program> *program)
 	{
 		GLuint TexLocation = glGetUniformLocation((*program)->pid, "tex");
 
@@ -308,15 +307,15 @@ public:
 		glUniform1i(TexLocation, 0);
 	}
 
-	void addTexture(string texName)
+	void addTexture(shared_ptr<Program> *program, string texName)
 	{
 		int width, height, channels;
 		char filepath[1000];
 		strcpy(filepath, texName.c_str());
 		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
+		glGenTextures(1, &Texture2);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, Texture2);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -324,10 +323,10 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
+		GLuint TexLocation = glGetUniformLocation((*program)->pid, "tex2");
 
-		glUseProgram((*prog)->pid);
-		glUniform1i(TexLocation, 0);
+		glUseProgram((*program)->pid);
+		glUniform1i(TexLocation, 1);
 	}
 
 	void draw(shared_ptr<Program> *program, bool depthTest, float x, float y, float epsilon)
@@ -336,7 +335,7 @@ public:
 			glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(VAO);
 
-		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z-epsilon-50));
+		M = glm::translate(glm::mat4(1), glm::vec3(x, y, z - epsilon - 50));
 		glUniformMatrix4fv((*program)->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -345,7 +344,7 @@ public:
 
 	void updatePos(double ftime)
 	{
-		if(falling)
+		if (falling)
 		{
 			impulseY += GRAVITY * ftime / 50000;
 			diffY += impulseY;
@@ -370,14 +369,14 @@ public:
 
 	// Shape to be used (from obj file)
 	shared_ptr<Shape> shape;
-	shared_ptr<Shape> shape2,lasershape,sun;
+	shared_ptr<Shape> shape2, lasershape, sun;
 
 	//camera
 	camera mycam;
 
 	//texture for sim
 	GLuint Texture;
-	GLuint Texture2,Texture3,Texture4,Texture5,TextureExplosion;
+	GLuint Texture2, Texture3, Texture4, Texture5, TextureExplosion;
 
 	// Relevant game data
 	gameData game;
@@ -474,7 +473,7 @@ public:
 
 		GLSL::checkVersion();
 
-		
+
 		// Set background color.
 		glClearColor(0.12f, 0.34f, 0.56f, 1.0f);
 
@@ -490,7 +489,7 @@ public:
 
 		//next function defines how to mix the background color with the transparent pixel in the foreground. 
 		//This is the standard:
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		scoreprog = make_shared<Program>();
 		scoreprog->setVerbose(true);
@@ -518,7 +517,7 @@ public:
 		hostStarting = false;
 	}
 
-	void initGeom(const std::string& resourceDirectory) 
+	void initGeom(const std::string& resourceDirectory)
 	{
 
 		sprite.init(&scoreprog, 0, resourceDirectory + "smol_idle.png");
@@ -532,6 +531,10 @@ public:
 		{
 			bill[ii].init(&things[ii], resourceDirectory);
 			bill[ii].bindToProg(&scoreprog);
+			if (bill[ii].name == "water")
+			{
+				bill[ii].addTexture(&scoreprog, resourceDirectory + "displacement.png");
+			}
 		}
 	}
 	void render()
@@ -554,18 +557,18 @@ public:
 
 				if (inSquare(vec2(player.pos.x - 1, player.pos.y), minX, maxX, minY, maxY))
 				{
-					//if (player.impulse.x < -6)
-					//	player.impulse.x = -player.impulse.x / 3;
-					//else
+					if (player.impulse.x < -6)
+						player.impulse.x = -player.impulse.x / 3;
+					else
 						player.impulse.x = 0;
 					player.pos.x = maxX + 1;
 				}
 
 				if (inSquare(vec2(player.pos.x + 1, player.pos.y), minX, maxX, minY, maxY))
 				{
-					//if (player.impulse.x > 6)
-					//	player.impulse.x = -player.impulse.x / 3;
-					//else
+					if (player.impulse.x > 6)
+						player.impulse.x = -player.impulse.x / 3;
+					else
 						player.impulse.x = 0;
 					player.pos.x = minX - 1;
 				}
@@ -635,11 +638,11 @@ public:
 				else
 					player.moving = false;
 			}
-			else if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A && 
-				     game.host.id == id) {
+			else if (gamepad->GetState().Gamepad.wButtons & XINPUT_GAMEPAD_A &&
+				game.host.id == id) {
 				hostStarting = true;
 			}
-			
+
 
 		}
 
@@ -651,25 +654,25 @@ public:
 		glViewport(0, 0, width, height);
 
 		auto P = std::make_shared<MatrixStack>();
-		P->pushMatrix();	
+		P->pushMatrix();
 		P->perspective(70., width, height, 0.1, 1000.0f);
-		glm::mat4 M,V,R,Sc;		
+		glm::mat4 M, V, R, Sc;
 		static float angle = 0;
 		angle += 0.01;
-		static vec3 eCord(0,0,0);
-					
+		static vec3 eCord(0, 0, 0);
+
 		//VIEW MATRIX
 		V = mycam.process();
-				
+
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		scoreprog->bind();
 
 		bool depth = true;
 
 		//S
-		M = glm::translate(mat4(1), glm::vec3(0,0,-3));
+		M = glm::translate(mat4(1), glm::vec3(0, 0, -3));
 		glUniformMatrix4fv(scoreprog->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
@@ -693,7 +696,7 @@ public:
 		glUniform1f(scoreprog->getUniform("animate"), 0);
 		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		glActiveTexture(GL_TEXTURE0);
-		
+
 
 		float wave = glfwGetTime();
 		float flip = 0;
@@ -703,13 +706,18 @@ public:
 				glUniform1f(scoreprog->getUniform("wave"), wave);
 				glUniform1f(scoreprog->getUniform("flip"), flip);
 				flip = 1;
+
+				bill[ii].draw(&scoreprog, depth, 0, -mycam.pos.y, 0);
 				glEnable(GL_DEPTH_TEST);
 			}
-			else
+			else {
 				glUniform1f(scoreprog->getUniform("wave"), 0);
-			bill[ii].draw(&scoreprog, depth, 0, -bill[ii].drawY, 0);
+				bill[ii].draw(&scoreprog, depth, 0, -bill[ii].drawY, 0);
+			}
 		}
-		
+
+
+		glUniform1f(scoreprog->getUniform("wave"), 0);
 		int inc = 1;
 		glUniform1f(scoreprog->getUniform("diffColor"), 0);
 		glDisable(GL_DEPTH_TEST);
@@ -725,7 +733,6 @@ public:
 
 		player.process(ftime);
 
-		glUniform1f(scoreprog->getUniform("wave"), 0);
 		glUniform1f(scoreprog->getUniform("animate"), player.animate);
 		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		if (player.isDead)
@@ -773,7 +780,7 @@ int main(int argc, char **argv) {
 	// Your main will always include a similar set up to establish your window
 	// and GL context, etc.
 
-	
+
 	WindowManager *windowManager = new WindowManager();
 	windowManager->init(1920, 1080);
 	windowManager->setEventCallbacks(application);
@@ -795,7 +802,7 @@ int main(int argc, char **argv) {
 	long double last_send = sw.elapse_milli();
 
 	// Loop until the user closes the window.
-	while (! glfwWindowShouldClose(windowManager->getHandle()))
+	while (!glfwWindowShouldClose(windowManager->getHandle()))
 	{
 		// Render scene.
 		application->render();
@@ -892,28 +899,28 @@ void computeTangentSpace(Shape *shape)
 		if (shape->eleBuf.at(i + 0) > im)			im = shape->eleBuf.at(i + 0);
 		if (shape->eleBuf.at(i + 1) > im)			im = shape->eleBuf.at(i + 1);
 		if (shape->eleBuf.at(i + 2) > im)			im = shape->eleBuf.at(i + 2);
-		
 
 
-		glm::vec3 vertex0 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i)*3),		shape->posBuf.at(shape->eleBuf.at(i) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i) * 3 + 2));
-		glm::vec3 vertex1 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i + 1) * 3),	shape->posBuf.at(shape->eleBuf.at(i + 1) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i + 1) * 3 + 2));
-		glm::vec3 vertex2 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i + 2) * 3),	shape->posBuf.at(shape->eleBuf.at(i + 2) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i + 2) * 3 + 2));
 
-		glm::vec3 normal0 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i) * 3),		shape->norBuf.at(shape->eleBuf.at(i) * 3 + 1),		shape->norBuf.at(shape->eleBuf.at(i) * 3 + 2));
-		glm::vec3 normal1 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i + 1) * 3),	shape->norBuf.at(shape->eleBuf.at(i + 1) * 3 + 1),	shape->norBuf.at(shape->eleBuf.at(i + 1) * 3 + 2));
-		glm::vec3 normal2 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i + 2) * 3),	shape->norBuf.at(shape->eleBuf.at(i + 2) * 3 + 1),	shape->norBuf.at(shape->eleBuf.at(i + 2) * 3 + 2));
+		glm::vec3 vertex0 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i) * 3), shape->posBuf.at(shape->eleBuf.at(i) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i) * 3 + 2));
+		glm::vec3 vertex1 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i + 1) * 3), shape->posBuf.at(shape->eleBuf.at(i + 1) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i + 1) * 3 + 2));
+		glm::vec3 vertex2 = glm::vec3(shape->posBuf.at(shape->eleBuf.at(i + 2) * 3), shape->posBuf.at(shape->eleBuf.at(i + 2) * 3 + 1), shape->posBuf.at(shape->eleBuf.at(i + 2) * 3 + 2));
 
-		glm::vec2 tex0 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i) * 2),			shape->texBuf.at(shape->eleBuf.at(i) * 2 + 1));
-		glm::vec2 tex1 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i + 1) * 2),		shape->texBuf.at(shape->eleBuf.at(i + 1) * 2 + 1));
-		glm::vec2 tex2 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i + 2) * 2),		shape->texBuf.at(shape->eleBuf.at(i + 2) * 2 + 1));
+		glm::vec3 normal0 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i) * 3), shape->norBuf.at(shape->eleBuf.at(i) * 3 + 1), shape->norBuf.at(shape->eleBuf.at(i) * 3 + 2));
+		glm::vec3 normal1 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i + 1) * 3), shape->norBuf.at(shape->eleBuf.at(i + 1) * 3 + 1), shape->norBuf.at(shape->eleBuf.at(i + 1) * 3 + 2));
+		glm::vec3 normal2 = glm::vec3(shape->norBuf.at(shape->eleBuf.at(i + 2) * 3), shape->norBuf.at(shape->eleBuf.at(i + 2) * 3 + 1), shape->norBuf.at(shape->eleBuf.at(i + 2) * 3 + 2));
+
+		glm::vec2 tex0 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i) * 2), shape->texBuf.at(shape->eleBuf.at(i) * 2 + 1));
+		glm::vec2 tex1 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i + 1) * 2), shape->texBuf.at(shape->eleBuf.at(i + 1) * 2 + 1));
+		glm::vec2 tex2 = glm::vec2(shape->texBuf.at(shape->eleBuf.at(i + 2) * 2), shape->texBuf.at(shape->eleBuf.at(i + 2) * 2 + 1));
 
 		glm::vec3 tan0, tan1, tan2; // tangents
 		glm::vec3 bin0, bin1, bin2; // binormal
 
-	
+
 		GetTangent(&vertex0, &vertex1, &vertex2, &tex0, &tex1, &tex2, &normal0, &normal1, &normal2, &tan0, &tan1, &tan2);
-		
-		
+
+
 		bin0 = glm::normalize(glm::cross(tan0, normal0));
 		bin1 = glm::normalize(glm::cross(tan1, normal1));
 		bin2 = glm::normalize(glm::cross(tan2, normal2));
@@ -997,7 +1004,7 @@ void GetTangent(
 	glm::vec3 erg;
 
 	erg = sdir - (*nnA) * glm::dot(*nnA, sdir);
-	erg =glm::normalize(erg);
+	erg = glm::normalize(erg);
 
 	*tanA = erg;
 	if (tanB)

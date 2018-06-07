@@ -32,9 +32,9 @@ public:
 		float going_forward = 0.0;
 		float going_up = 0.0;
 		if (e == 1)
-			going_up += 0.1;
+			going_up += 0.5;
 		if (q == 1)
-			going_up -= 0.1;
+			going_up -= 0.5;
 		if (w == 1)
 			going_forward += 0.1;
 		if (s == 1)

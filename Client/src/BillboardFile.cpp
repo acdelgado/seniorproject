@@ -83,7 +83,7 @@ vector<BillboardData> BillboardFile::getAll() {
 
 
 	while (input) {
-		while ((line[0] == '/' && line[1] == '/') || line.length() == 0) {
+		while (input && ((line[0] == '/' && line[1] == '/') || line.length() == 0)) {
 			getline(input, line);
 		}
 		if (line[0] == '#') {

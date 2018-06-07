@@ -61,8 +61,8 @@ class server_data_packet_
 
 	};
 
-#define CLIENT_DATA_INT 16
-#define CLIENT_DATA_FLOAT 32
+#define CLIENT_DATA_INT 256
+#define CLIENT_DATA_FLOAT 512
 //#define CLIENT_DATA_INT 256
 //#define CLIENT_DATA_FLOAT 1024
 class client_data_packet_
