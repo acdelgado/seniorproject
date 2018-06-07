@@ -6,6 +6,8 @@ in vec2 fragTex;
 
 uniform sampler2D tex;
 uniform vec2 offset;
+uniform float wave;
+uniform float flip;
 uniform float animate;
 uniform float diffColor;
 
@@ -26,5 +28,12 @@ void main()
 		if(color.a > 0.1)
 			color.a = 0.8;
 	}
-	
+	if(wave != 0)
+	{
+		vec2 displacement = texture(tex, fragTex / 5.0).xy;
+		float t = fragTex.y + displacement.y * 0.1+(sin(fragTex.x * 500.0+wave*2)*0.01);
+		if(flip == 1)
+			t = fragTex.y + displacement.y * 0.1+(sin(fragTex.x * 500.0-wave*2)*0.01);
+			color = texture(tex,vec2(fragTex.x,t));
+	}
 }

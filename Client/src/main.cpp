@@ -308,6 +308,28 @@ public:
 		glUniform1i(TexLocation, 0);
 	}
 
+	void addTexture(string texName)
+	{
+		int width, height, channels;
+		char filepath[1000];
+		strcpy(filepath, texName.c_str());
+		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &Texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		GLuint TexLocation = glGetUniformLocation((*prog)->pid, "tex");
+
+		glUseProgram((*prog)->pid);
+		glUniform1i(TexLocation, 0);
+	}
+
 	void draw(shared_ptr<Program> *program, bool depthTest, float x, float y, float epsilon)
 	{
 		if (!depthTest)
@@ -478,6 +500,8 @@ public:
 		scoreprog->addUniform("offset");
 		scoreprog->addUniform("animate");
 		scoreprog->addUniform("diffColor");
+		scoreprog->addUniform("wave");
+		scoreprog->addUniform("flip");
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
@@ -658,7 +682,18 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		
 
+		float wave = glfwGetTime();
+		float flip = 0;
 		for (int ii = 0; ii < bill.size(); ii++) {
+			if (bill[ii].name == "water") {
+				glDisable(GL_DEPTH_TEST);
+				glUniform1f(scoreprog->getUniform("wave"), wave);
+				glUniform1f(scoreprog->getUniform("flip"), flip);
+				flip = 1;
+				glEnable(GL_DEPTH_TEST);
+			}
+			else
+				glUniform1f(scoreprog->getUniform("wave"), 0);
 			bill[ii].draw(&scoreprog, depth, 0, -bill[ii].drawY, 0);
 		}
 		
@@ -677,6 +712,7 @@ public:
 
 		player.process(ftime);
 
+		glUniform1f(scoreprog->getUniform("wave"), 0);
 		glUniform1f(scoreprog->getUniform("animate"), player.animate);
 		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		if (player.isDead)
