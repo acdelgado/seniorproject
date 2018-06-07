@@ -7,6 +7,7 @@ uniform mat4 M;
 uniform mat4 V;
 uniform float wave;
 uniform float flip;
+uniform float dead;
 out vec2 fragTex;
 out vec3 pos;
 uniform sampler2D tex;
@@ -19,5 +20,6 @@ if(wave != 0){
 		gl_Position.y += sin(wave)/2;
 }
 fragTex = vertTex;	
-fragTex.y *= -1;
+if(dead == 0)
+	fragTex.y *= -1;
 }

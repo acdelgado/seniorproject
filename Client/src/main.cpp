@@ -64,8 +64,13 @@ public:
 	long double jump_start;
 	bool moving;
 	bool jumping;
-	bool isDead;
+	bool isDead, inWater;
+	float killY;
 
+	void setKillY(float kill)
+	{
+		killY = kill;
+	}
 	character()
 	{
 		pos = vec2(-10, 1);
@@ -89,9 +94,12 @@ public:
 
 		pos += impulse * ftime;
 		impulse.y -= GRAVITY * ftime;
-		if (pos.y < -20) //death fall y-value
+		if (inWater)
+			impulse.y *= 0.8;
+		if (pos.y < killY) //death fall y-value
 		{
-			this->reset();
+			if(!inWater)
+				this->drown();
 		}
 
 		//animate
@@ -127,6 +135,13 @@ public:
 		impulse.x = 0;
 		impulse.y = 12;
 		isDead = TRUE;
+	}
+
+	void drown()
+	{
+		impulse.x = 0;
+		isDead = TRUE;
+		inWater = TRUE;
 	}
 };
 
@@ -508,6 +523,7 @@ public:
 		scoreprog->addUniform("diffColor");
 		scoreprog->addUniform("wave");
 		scoreprog->addUniform("flip");
+		scoreprog->addUniform("dead");
 		scoreprog->addAttribute("vertPos");
 		scoreprog->addAttribute("vertTex");
 
@@ -677,6 +693,7 @@ public:
 		glUniformMatrix4fv(scoreprog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(scoreprog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 
+		//toggle animation frame
 		t++;
 		if (t % 5 == 0) {
 			offset.x += 1 / 3.0f;
@@ -693,6 +710,7 @@ public:
 
 		}
 		glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
+		glUniform1f(scoreprog->getUniform("dead"), 0);
 		glUniform1f(scoreprog->getUniform("animate"), 0);
 		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		glActiveTexture(GL_TEXTURE0);
@@ -724,15 +742,35 @@ public:
 		for (auto it = others.begin(); it != others.end(); ++it) {
 			int ep = it->first;
 			character temp = it->second;
+			temp.setKillY(-mycam.pos.y-10);
 			temp.process(ftime);
+			if (temp.inWater) {
+				vec2 deadoffset = vec2(0, 0);
+				glUniform2fv(scoreprog->getUniform("offset"), 1, &deadoffset.x);
+				glUniform1f(scoreprog->getUniform("dead"), 1);
+			}
+			else {
+				glUniform1f(scoreprog->getUniform("dead"), 0);
+				glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
+			}
 			glUniform1f(scoreprog->getUniform("animate"), temp.animate);
 			display_sprite(temp, depth, 0.00001f * ep);
 			inc++;
 		}
 		glEnable(GL_DEPTH_TEST);
 
+		player.setKillY(-mycam.pos.y-10);
 		player.process(ftime);
+		if (player.inWater) {
+			vec2 deadoffset = vec2(0, 0);
 
+			glUniform1f(scoreprog->getUniform("dead"), 1);
+			glUniform2fv(scoreprog->getUniform("offset"), 1, &deadoffset.x);
+		}
+		else {
+			glUniform1f(scoreprog->getUniform("dead"), 0);
+			glUniform2fv(scoreprog->getUniform("offset"), 1, &offset.x);
+		}
 		glUniform1f(scoreprog->getUniform("animate"), player.animate);
 		glUniform1f(scoreprog->getUniform("diffColor"), 1);
 		if (player.isDead)
