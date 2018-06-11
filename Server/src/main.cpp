@@ -651,8 +651,8 @@ int main(int argc, char **argv)
 
 	while (true) {
 		if (sw.elapse_milli() > last + diff) {
-			if (gd.active && gd.camera_pos.y > -700) {
-				gd.camera_pos.y -= 0.005;
+			if (gd.active && gd.camera_pos.y > -90) {
+				gd.camera_pos.y -= 0.0045;
 			}
 
 			last = sw.elapse_milli();

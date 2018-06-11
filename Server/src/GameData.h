@@ -4,7 +4,7 @@
 #define GAME_DATA
 
 #define MAX_PLAYERS 30
-#define MAX_OBJECTS 5
+#define MAX_OBJECTS 20
 
 #include "BillboardFile.h"
 #include "glm/glm.hpp"

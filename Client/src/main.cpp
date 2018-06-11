@@ -1,10 +1,11 @@
-/* Lab 6 base code - transforms using local matrix functions
-to be written by students -
-based on lab 5 by CPE 471 Cal Poly Z. Wood + S. Sueda
-& Ian Dunn, Christian Eckhardt
-Modified heavily by Anthony Delgado for the
-implementation of a 3D version of the 1979 arcade classic, "Asteroids"
-*/
+/*
+ * Jump n Run
+ * Senior Project
+ * By Anthony Delgado & Ryan Hartzell
+ * With help and guidance from Christian Eckhardt
+ * Cal Poly San Luis Obispo Computer Science
+ * 2018
+ */
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -408,7 +409,7 @@ public:
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		/*if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
@@ -459,25 +460,25 @@ public:
 		if (key == GLFW_KEY_Q && action == GLFW_RELEASE)
 		{
 			mycam.q = 0;
-		}
+		}*/
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
 	{
-		double posX, posY;
-		int winX, winY;
+		//double posX, posY;
+		//int winX, winY;
 
-		if (action == GLFW_PRESS)
-		{
-			// FOR DEBUGGING AND TESTING PURPOSES
-			glfwGetCursorPos(window, &posX, &posY);
-			glfwGetWindowSize(window, &winX, &winY);
-			cout << "Pos X " << posX << " Pos Y " << posY << endl;
-			float relX = posX - (winX / 2);
-			float relY = posY - (winY / 2);
-			player.pos.x = mycam.pos.x + relX / 20;
-			player.pos.y = -mycam.pos.y - relY / 20;
-		}
+		//if (action == GLFW_PRESS)
+		//{
+		//	// FOR DEBUGGING AND TESTING PURPOSES
+		//	glfwGetCursorPos(window, &posX, &posY);
+		//	glfwGetWindowSize(window, &winX, &winY);
+		//	cout << "Pos X " << posX << " Pos Y " << posY << endl;
+		//	float relX = posX - (winX / 2);
+		//	float relY = posY - (winY / 2);
+		//	player.pos.x = mycam.pos.x + relX / 20;
+		//	player.pos.y = -mycam.pos.y - relY / 20;
+		//}
 	}
 
 	void resizeCallback(GLFWwindow *window, int width, int height)
@@ -627,7 +628,7 @@ public:
 						player.impulse.y = 10.0;
 					}
 					else if (player.jumping && !player.end_jump()) {
-						player.impulse.y = min(player.impulse.y + 1.5, 12.5);
+						player.impulse.y = min(player.impulse.y + 1.5, 14.0);
 					}
 				}
 				else if (player.impulse.y == 0.0) {
@@ -834,7 +835,7 @@ int main(int argc, char **argv) {
 	application->initGeom(resourceDir);
 
 	/*start_client("129.65.221.104", 27015);*/
-	start_client("129.65.113.228", 27015);
+	start_client("127.0.0.1", 27015);
 
 	client_data_packet_ cp;
 	server_data_packet_ incoming;
