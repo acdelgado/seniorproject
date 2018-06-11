@@ -27,7 +27,7 @@ void main()
 	{
 		color *= 1.3;
 		if(color.a > 0.1)
-			color.a = 0.8;
+			color.a = 0.5;
 	}
 	if(wave != 0)
 	{
