@@ -834,8 +834,8 @@ int main(int argc, char **argv) {
 	application->init(resourceDir);
 	application->initGeom(resourceDir);
 
-	/*start_client("129.65.221.104", 27015);*/
-	start_client("127.0.0.1", 27015);
+	start_client("129.65.221.105", 27015);
+	//start_client("127.0.0.1", 27015);
 
 	client_data_packet_ cp;
 	server_data_packet_ incoming;
